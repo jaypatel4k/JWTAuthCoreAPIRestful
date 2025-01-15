@@ -244,13 +244,12 @@ namespace JWTAuthCoreAPIRestful.Controllers
 
         [Route("UploadStudent")]
         [HttpPost]
-        public async Task<IActionResult> InsertUpdateStudent(IFormFile file, int divisionId, int standadId)
+        public async Task<IActionResult> InsertUpdateStudent(IFormFile file,[FromQuery] string divisionId,[FromQuery] string standadId)
         {
             if (file == null || file.Length == 0)
             {
                 return BadRequest("File is empty.");
             }
-
             try
             {
                await _studentReportRepository.BeginTransaction();
@@ -290,8 +289,8 @@ namespace JWTAuthCoreAPIRestful.Controllers
                             student.Name = rowData[1];
                             student.RollNo =Convert.ToInt32(rowData[2]);
                             student.DOB = DateTime.Now;
-                            student.DivisionId = divisionId;
-                            student.StandId = standadId;
+                            student.DivisionId =Convert.ToInt32(divisionId);
+                            student.StandId = Convert.ToInt32(standadId);
 
                             var studentExist =await _studentReportRepository.GetStudentByNameAsync(student.Name);
                             if(studentExist == null)
@@ -302,7 +301,7 @@ namespace JWTAuthCoreAPIRestful.Controllers
                     }
                 }
                 await _studentReportRepository.CommitTransaction();
-                return Ok();
+                return Ok("{\"success\": \"Data uploaded Successfully\"}");
             }
             catch (Exception ex)
             {
