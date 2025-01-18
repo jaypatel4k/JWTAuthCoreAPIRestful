@@ -1,7 +1,12 @@
-﻿using JWTAuthCoreAPIRestful.Data;
+﻿using DocumentFormat.OpenXml.Drawing.Charts;
+using DocumentFormat.OpenXml.InkML;
+using JWTAuthCoreAPIRestful.Data;
 using JWTAuthCoreAPIRestful.Interface;
 using JWTAuthCoreAPIRestful.Models.StudentResultModel;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Concurrent;
 
 namespace JWTAuthCoreAPIRestful.Repository
 {
@@ -129,6 +134,27 @@ namespace JWTAuthCoreAPIRestful.Repository
             return await _dbcontext.Student.ToListAsync();
         }
 
+        public async Task<IEnumerable<StudentDTO>> GetStudentByStandardAndDivisionAsync(int divisionId, int standadId)
+        {
+            //return await _dbcontext.Student.ToListAsync();
+            List<Student> listStud =await _dbcontext.Student.ToListAsync();
+
+            List<Standard> listStan = await _dbcontext.Standard.ToListAsync();
+
+            List<Division> listDiv = await _dbcontext.Division.ToListAsync();
+
+            var result = from stud in listStud
+                         join stand in listStan on stud.StandId equals stand.Id
+                         join div in listDiv on stud.DivisionId equals div.Id
+                         where stand.Id == standadId && div.Id == divisionId
+                         select new StudentDTO
+                         {
+                             Name = stud.Name,
+                             RollNo = stud.RollNo
+                         };
+            return result.ToList();
+        }
+
         public async Task<Student> GetStudentByIdAsync(int studentid)
         {
             return await _dbcontext.Student.FindAsync(studentid);
@@ -137,6 +163,10 @@ namespace JWTAuthCoreAPIRestful.Repository
         public async Task<Student> GetStudentByNameAsync(string studentName)
         {
             return await _dbcontext.Student.FirstOrDefaultAsync(s => s.Name == studentName);
+        }
+        public async Task<Student?> GetStudentByNameStandardAndDivisionAsync(string studentName, int standardId, int divisionId)
+        {
+            return await _dbcontext.Student.FirstOrDefaultAsync(s => s.Name == studentName && s.DivisionId == divisionId && s.StandId == standardId);
         }
 
         public async Task AddStudentAsync(Student student)
@@ -147,6 +177,7 @@ namespace JWTAuthCoreAPIRestful.Repository
 
         public async Task UpdateStudentAync(Student student)
         {
+           // _dbcontext.Entry(student).State = EntityState.Modified;
             _dbcontext.Update(student);
             await _dbcontext.SaveChangesAsync();
         }
@@ -230,9 +261,17 @@ namespace JWTAuthCoreAPIRestful.Repository
             }
         }
 
-        public async Task<IEnumerable<TestHeldOfMark>> GetAllTestHeldOfMarkAsync()
+        public async Task<IEnumerable<TestHeldOfMarkDTO>> GetAllTestHeldOfMarkAsync()
         {
-            return await _dbcontext.TestHeldOfMark.ToListAsync();
+            var allresult = await _dbcontext.TestHeldOfMark.ToListAsync();
+            var result = (from t in allresult
+                          select new TestHeldOfMarkDTO
+                          {
+                              Id = t.Id,
+                              OutOfMark = t.OutOfMark
+                          }).ToList();
+            return result;
+
         }
 
         public async Task<TestHeldOfMark> GetTestHeldOfMarkByIdAsync(int testHeldOfMarkid)
@@ -294,6 +333,85 @@ namespace JWTAuthCoreAPIRestful.Repository
             }
         }
 
-        
+        public async Task<IEnumerable<Month>> GetMonthAsync()
+        {
+            return await _dbcontext.Month.ToListAsync();
+        }
+        public async Task<IEnumerable<Year>> GetYearAsync()
+        {
+            return await _dbcontext.Year.ToListAsync();
+        }
+
+
+        //RANK
+        public async Task<IEnumerable<TopRankInClassDTO>> GetTopThreeRankInClass(int testTypeId, int monthId, int yearId, int standardId, int divisionId)
+        {
+            List<Student> listStud = await _dbcontext.Student.ToListAsync();
+            List<StudentMark> listMark = await _dbcontext.StudentMark.ToListAsync();
+            List<Subject> listSubject = await _dbcontext.Subject.ToListAsync();
+
+            var result = (from stud in listStud
+                          join mark in listMark on stud.Id equals mark.StudentId
+                          join sub in listSubject on mark.SubjectId equals sub.Id
+                          where mark.StandardId == standardId && mark.DivisionId == divisionId
+                          && mark.TestTypeId == testTypeId && mark.MonthId == monthId && mark.YearId == yearId
+                          group new { stud, mark } by new { stud.Name, stud.RollNo } into g
+                          select new TopRankInClassDTO
+                          {
+                              Name = g.Key.Name,
+                              RollNo = g.Key.RollNo,
+                              TotalMarks = (int)g.Sum(x => x.mark.Marks),
+                              Rank = 0 // Placeholder for rank
+                          }).OrderByDescending(x => x.TotalMarks).Take(3).ToList();
+            // Assign ranks
+            for (int i = 0; i < result.Count; i++)
+            {
+                result[i].Rank = i + 1;
+            }
+
+            return result;
+        }
+        public async Task<IEnumerable<TopRankInClassBySubject>> GetTopRankBySubjectInClass(int testTypeId, int monthId, int yearId, int standardId, int divisionId)
+        {
+            List<Student> listStud = await _dbcontext.Student.ToListAsync();
+            List<StudentMark> listMark = await _dbcontext.StudentMark.ToListAsync();
+            List<Subject> listSubject = await _dbcontext.Subject.ToListAsync();
+
+            var result = (from stud in listStud
+                          join mark in listMark on stud.Id equals mark.StudentId
+                          join sub in listSubject on mark.SubjectId equals sub.Id
+                          where mark.StandardId == standardId && mark.DivisionId == divisionId
+                          && mark.TestTypeId == testTypeId && mark.MonthId == monthId && mark.YearId == yearId
+                          group new { stud, mark, sub } by new { stud.Name, stud.RollNo, sub.SubjectName } into g
+                          select new TopRankInClassBySubject
+                          {
+                              Name = g.Key.Name,
+                              RollNo = g.Key.RollNo,
+                              SubjectName = g.Key.SubjectName,
+                              TotalMarks = (int)g.Max(x => x.mark.Marks),
+                              Rank = 0 // Placeholder for rank
+                          }).OrderByDescending(x => x.TotalMarks).ToList();
+
+            // Assign ranks
+            var groupedResult = from p in result
+                                group p by new { p.SubjectName } into g
+                                select g;
+            foreach (var group in groupedResult)
+            {
+                int rank = 1;
+                var mxMark = group.Max(x => x.TotalMarks);
+                foreach (var item in group)
+                {
+                   if(item.TotalMarks == mxMark)
+                        item.Rank = rank;
+                   else
+                        item.Rank = 0;
+                }
+                
+            }
+
+            return result.Where(x => x.Rank == 1);
+        }
+
     }
 }

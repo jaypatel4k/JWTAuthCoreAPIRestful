@@ -3,6 +3,7 @@ using DocumentFormat.OpenXml.Spreadsheet;
 using JWTAuthCoreAPIRestful.Interface;
 using JWTAuthCoreAPIRestful.Models.StudentResultModel;
 using JWTAuthCoreAPIRestful.Repository;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Data;
@@ -20,6 +21,79 @@ namespace JWTAuthCoreAPIRestful.Controllers
             _studentReportRepository = studentReportRepository;
         }
 
+        [HttpGet]
+        [Route("GetStudentListByDivAndStandard")]
+       // [Authorize]
+        public async Task<ActionResult<IEnumerable<StudentDTO>>> GetStudentsByDivAndStand([FromQuery] int divisionId, [FromQuery] int standadId)
+        {
+            var student = await _studentReportRepository.GetStudentByStandardAndDivisionAsync(divisionId,standadId);
+            return Ok(student);
+        }
+
+        [HttpGet]
+        [Route("GetDivisionList")]
+        public async Task<ActionResult<IEnumerable<Division>>> GetDivisionData()
+        {
+            var division = await _studentReportRepository.GetAllDivisionAsync();
+            return Ok(division);
+        }
+
+        [HttpGet]
+        [Route("GetStandardList")]
+        public async Task<ActionResult<IEnumerable<Standard>>> GetStandardData()
+        {
+            var standard = await _studentReportRepository.GetAllStandardAsync();
+            return Ok(standard);
+        }
+        [HttpGet]
+        [Route("GetTestTypeList")]
+        public async Task<ActionResult<IEnumerable<TestType>>> GetTestTypeData()
+        {
+            var data = await _studentReportRepository.GetAllTestTypeAsync();
+            return Ok(data);
+        }
+        [HttpGet]
+        [Route("GetYear")]
+        public async Task<ActionResult<IEnumerable<Year>>> GetYear()
+        {
+            var data = await _studentReportRepository.GetYearAsync();
+            return Ok(data);
+        }
+        [HttpGet]
+        [Route("GetMonth")]
+        public async Task<ActionResult<IEnumerable<Month>>> GetMonth()
+        {
+            var data = await _studentReportRepository.GetMonthAsync();
+            return Ok(data);
+        }
+        [HttpGet]
+        [Route("GetAllTestHeldOfMark")]
+        public async Task<ActionResult<IEnumerable<TestHeldOfMarkDTO>>> GetAllTestHeldOfMarkData()
+        {
+            var data = await _studentReportRepository.GetAllTestHeldOfMarkAsync();
+            return Ok(data);
+        }
+        [HttpGet]
+        [Route("GetStreamTypeList")]
+        public async Task<ActionResult<IEnumerable<TestHeldOfMarkDTO>>> GetAllStreamTypeData()
+        {
+            var data = await _studentReportRepository.GetAllStreamTypeAsync();
+            return Ok(data);
+        }
+        [HttpGet]
+        [Route("GetTopThreeRankInClass")]
+        public async Task<ActionResult<IEnumerable<TopRankInClassDTO>>> GetTopThreeRankInClassData(int testTypeId, int monthId, int yearId, int standardId, int divisionId)
+        {
+            var data = await _studentReportRepository.GetTopThreeRankInClass(testTypeId, monthId, yearId, standardId, divisionId);
+            return Ok(data);
+        }
+        [HttpGet]
+        [Route("GetTopRankBySubjectInClass")]
+        public async Task<ActionResult<IEnumerable<TopRankInClassDTO>>> GetTopRankBySubjectInClassData(int testTypeId, int monthId, int yearId, int standardId, int divisionId)
+        {
+            var data = await _studentReportRepository.GetTopRankBySubjectInClass(testTypeId, monthId, yearId, standardId, divisionId);
+            return Ok(data);
+        }
 
         [Route("UploadStudentMarks")]
         [HttpPost]
@@ -71,7 +145,7 @@ namespace JWTAuthCoreAPIRestful.Controllers
                                 {
                                     if (cell.Address.ColumnNumber == 2)
                                     {
-                                        student = await _studentReportRepository.GetStudentByNameAsync(cell.Value.GetText().ToUpper());
+                                        student = await _studentReportRepository.GetStudentByNameStandardAndDivisionAsync(cell.Value.GetText().ToUpper(),standardId, divisionId);
                                         if (student == null)
                                         {
                                             return NotFound("Student not exist in databse. == " + cell.Value.GetText());
@@ -155,7 +229,7 @@ namespace JWTAuthCoreAPIRestful.Controllers
                         await _studentReportRepository.CommitTransaction();
                     }
                 }
-                return Ok();
+                return Ok("{\"success\": \"Student Marks uploaded Successfully\"}");
             }
             catch(Exception ex)
             {
@@ -252,7 +326,7 @@ namespace JWTAuthCoreAPIRestful.Controllers
             }
             try
             {
-               await _studentReportRepository.BeginTransaction();
+                await _studentReportRepository.BeginTransaction();
 
                 var data = new List<Dictionary<string, string>>();
 
@@ -292,16 +366,28 @@ namespace JWTAuthCoreAPIRestful.Controllers
                             student.DivisionId =Convert.ToInt32(divisionId);
                             student.StandId = Convert.ToInt32(standadId);
 
-                            var studentExist =await _studentReportRepository.GetStudentByNameAsync(student.Name);
-                            if(studentExist == null)
+                            //_studentReportRepository.Entry
+// _studentReportRepository.Entry
+                            var studentExist = await _studentReportRepository.GetStudentByNameAsync(student.Name);
+                            if (studentExist == null)
                             {
-                               await _studentReportRepository.AddStudentAsync(student);
+                                await _studentReportRepository.AddStudentAsync(student);
                             }
+                            else
+                            {
+                                // Update existing student details if necessary
+                                studentExist.RollNo = student.RollNo;
+                                studentExist.DOB = student.DOB;
+                                studentExist.DivisionId = student.DivisionId;
+                                studentExist.StandId = student.StandId;
+                                await _studentReportRepository.UpdateStudentAync(studentExist);
+                            }
+
                         }
                     }
                 }
                 await _studentReportRepository.CommitTransaction();
-                return Ok("{\"success\": \"Data uploaded Successfully\"}");
+                return Ok("{\"success\": \"Student Data uploaded Successfully\"}");
             }
             catch (Exception ex)
             {
