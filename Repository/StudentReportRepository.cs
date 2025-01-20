@@ -344,7 +344,7 @@ namespace JWTAuthCoreAPIRestful.Repository
 
 
         //RANK
-        public async Task<IEnumerable<TopRankInClassDTO>> GetTopThreeRankInClass(int testTypeId, int monthId, int yearId, int standardId, int divisionId)
+        public async Task<IEnumerable<TopRankInClassDTO>> GetTopThreeRankInClass(int testTypeId, int monthId, int yearId, int standardId, int divisionId, int streamId)
         {
             List<Student> listStud = await _dbcontext.Student.ToListAsync();
             List<StudentMark> listMark = await _dbcontext.StudentMark.ToListAsync();
@@ -354,7 +354,7 @@ namespace JWTAuthCoreAPIRestful.Repository
                           join mark in listMark on stud.Id equals mark.StudentId
                           join sub in listSubject on mark.SubjectId equals sub.Id
                           where mark.StandardId == standardId && mark.DivisionId == divisionId
-                          && mark.TestTypeId == testTypeId && mark.MonthId == monthId && mark.YearId == yearId
+                          && mark.TestTypeId == testTypeId && mark.MonthId == monthId && mark.YearId == yearId && mark.StreamId == streamId
                           group new { stud, mark } by new { stud.Name, stud.RollNo } into g
                           select new TopRankInClassDTO
                           {
@@ -371,7 +371,7 @@ namespace JWTAuthCoreAPIRestful.Repository
 
             return result;
         }
-        public async Task<IEnumerable<TopRankInClassBySubject>> GetTopRankBySubjectInClass(int testTypeId, int monthId, int yearId, int standardId, int divisionId)
+        public async Task<IEnumerable<TopRankInClassBySubject>> GetTopRankBySubjectInClass(int testTypeId, int monthId, int yearId, int standardId, int divisionId, int streamId)
         {
             List<Student> listStud = await _dbcontext.Student.ToListAsync();
             List<StudentMark> listMark = await _dbcontext.StudentMark.ToListAsync();
@@ -381,7 +381,7 @@ namespace JWTAuthCoreAPIRestful.Repository
                           join mark in listMark on stud.Id equals mark.StudentId
                           join sub in listSubject on mark.SubjectId equals sub.Id
                           where mark.StandardId == standardId && mark.DivisionId == divisionId
-                          && mark.TestTypeId == testTypeId && mark.MonthId == monthId && mark.YearId == yearId
+                          && mark.TestTypeId == testTypeId && mark.MonthId == monthId && mark.YearId == yearId && mark.StreamId == streamId
                           group new { stud, mark, sub } by new { stud.Name, stud.RollNo, sub.SubjectName } into g
                           select new TopRankInClassBySubject
                           {

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Data;
+using System.IO;
 using System.Text;
 
 namespace JWTAuthCoreAPIRestful.Controllers
@@ -82,16 +83,16 @@ namespace JWTAuthCoreAPIRestful.Controllers
         }
         [HttpGet]
         [Route("GetTopThreeRankInClass")]
-        public async Task<ActionResult<IEnumerable<TopRankInClassDTO>>> GetTopThreeRankInClassData(int testTypeId, int monthId, int yearId, int standardId, int divisionId)
+        public async Task<ActionResult<IEnumerable<TopRankInClassDTO>>> GetTopThreeRankInClassData(int testTypeId, int monthId, int yearId, int standardId, int divisionId,int streamId)
         {
-            var data = await _studentReportRepository.GetTopThreeRankInClass(testTypeId, monthId, yearId, standardId, divisionId);
+            var data = await _studentReportRepository.GetTopThreeRankInClass(testTypeId, monthId, yearId, standardId, divisionId, streamId);
             return Ok(data);
         }
         [HttpGet]
         [Route("GetTopRankBySubjectInClass")]
-        public async Task<ActionResult<IEnumerable<TopRankInClassDTO>>> GetTopRankBySubjectInClassData(int testTypeId, int monthId, int yearId, int standardId, int divisionId)
+        public async Task<ActionResult<IEnumerable<TopRankInClassDTO>>> GetTopRankBySubjectInClassData(int testTypeId, int monthId, int yearId, int standardId, int divisionId,int streamId)
         {
-            var data = await _studentReportRepository.GetTopRankBySubjectInClass(testTypeId, monthId, yearId, standardId, divisionId);
+            var data = await _studentReportRepository.GetTopRankBySubjectInClass(testTypeId, monthId, yearId, standardId, divisionId,streamId);
             return Ok(data);
         }
 
