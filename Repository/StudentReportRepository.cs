@@ -358,10 +358,10 @@ namespace JWTAuthCoreAPIRestful.Repository
                           group new { stud, mark } by new { stud.Name, stud.RollNo } into g
                           select new TopRankInClassDTO
                           {
-                              Name = g.Key.Name,
                               RollNo = g.Key.RollNo,
-                              TotalMarks = (int)g.Sum(x => x.mark.Marks),
-                              Rank = 0 // Placeholder for rank
+                              Name = g.Key.Name,
+                              Rank = 0 ,// Placeholder for rank
+                              TotalMarks = (int)g.Sum(x => x.mark.Marks)
                           }).OrderByDescending(x => x.TotalMarks).Take(3).ToList();
             // Assign ranks
             for (int i = 0; i < result.Count; i++)
@@ -385,8 +385,8 @@ namespace JWTAuthCoreAPIRestful.Repository
                           group new { stud, mark, sub } by new { stud.Name, stud.RollNo, sub.SubjectName } into g
                           select new TopRankInClassBySubject
                           {
-                              Name = g.Key.Name,
                               RollNo = g.Key.RollNo,
+                              Name = g.Key.Name,
                               SubjectName = g.Key.SubjectName,
                               TotalMarks = (int)g.Max(x => x.mark.Marks),
                               Rank = 0 // Placeholder for rank
