@@ -362,14 +362,46 @@ namespace JWTAuthCoreAPIRestful.Repository
                               Name = g.Key.Name,
                               Rank = 0 ,// Placeholder for rank
                               TotalMarks = (int)g.Sum(x => x.mark.Marks)
-                          }).OrderByDescending(x => x.TotalMarks).Take(3).ToList();
+                          }).OrderByDescending(x => x.TotalMarks).ToList();
+
+            var top3Marks = (from m in result
+                             orderby m.TotalMarks descending
+                             select new
+                             {
+                                 top3mark = m.TotalMarks
+                             }).Take(3).Distinct().ToList();
+            var top3Result = (from m in result
+                              join t in top3Marks on m.TotalMarks equals t.top3mark
+                              select m).Distinct().ToList();
+            int pevmark = 0;
+            int rank = 1;
             // Assign ranks
-            for (int i = 0; i < result.Count; i++)
+            for (int i = 0; i < top3Result.Count; i++)
             {
-                result[i].Rank = i + 1;
+               if (pevmark < result[i].TotalMarks)
+                {
+                    result[i].Rank = rank;
+                    pevmark = result[i].TotalMarks;
+                }
+               else if(pevmark > result[i].TotalMarks)
+                {
+                    rank++;
+                    result[i].Rank = rank;
+                    pevmark = result[i].TotalMarks;
+                }
+                else if (pevmark == result[i].TotalMarks)
+                {
+                    result[i].Rank = rank;
+                    pevmark = result[i].TotalMarks;
+                }
+
+                //if (top3Marks[1].top3mark == result[i].TotalMarks)
+                //  result[i].Rank = 2;
+                //if (top3Marks[2].top3mark == result[i].TotalMarks)
+                //  result[i].Rank = 3;
             }
 
-            return result;
+            return top3Result;
         }
         public async Task<IEnumerable<TopRankInClassBySubject>> GetTopRankBySubjectInClass(int testTypeId, int monthId, int yearId, int standardId, int divisionId, int streamId)
         {
@@ -395,7 +427,7 @@ namespace JWTAuthCoreAPIRestful.Repository
             // Assign ranks
             var groupedResult = from p in result
                                 group p by new { p.SubjectName } into g
-                                select g;
+                                select g.OrderByDescending(x => x.TotalMarks);
             foreach (var group in groupedResult)
             {
                 int rank = 1;
