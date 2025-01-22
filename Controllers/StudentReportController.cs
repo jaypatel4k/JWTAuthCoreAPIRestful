@@ -91,7 +91,7 @@ namespace JWTAuthCoreAPIRestful.Controllers
         }
         [HttpGet]
         [Route("GetTopRankBySubjectInClass")]
-        public async Task<ActionResult<IEnumerable<TopRankInClassDTO>>> GetTopRankBySubjectInClassData(int testTypeId, int monthId, int yearId, int standardId, int divisionId,int streamId)
+        public async Task<ActionResult<IEnumerable<TopRankInClassBySubject>>> GetTopRankBySubjectInClassData(int testTypeId, int monthId, int yearId, int standardId, int divisionId,int streamId)
         {
             var data = await _studentReportRepository.GetTopRankBySubjectInClass(testTypeId, monthId, yearId, standardId, divisionId,streamId);
             return Ok(data);
@@ -99,7 +99,7 @@ namespace JWTAuthCoreAPIRestful.Controllers
 
         [HttpGet]
         [Route("GetTopThreeRankInAllDivision")]
-        public async Task<ActionResult<IEnumerable<TopRankInAllDivisionBySubject>>> GetTopThreeRankInAllDivisionData(int testTypeId, int monthId, int yearId, int standardId, int streamId)
+        public async Task<ActionResult<IEnumerable<TopThreeRankInAllDivision>>> GetTopThreeRankInAllDivisionData(int testTypeId, int monthId, int yearId, int standardId, int streamId)
         {
             var data = await _studentReportRepository.GetTopThreeRankInAllDivision(testTypeId, monthId, yearId, standardId, streamId);
             return Ok(data);
@@ -112,6 +112,22 @@ namespace JWTAuthCoreAPIRestful.Controllers
             var data = await _studentReportRepository.GetTopRankBySubjectInAllDivision(testTypeId, monthId, yearId, standardId, streamId);
             return Ok(data);
         }
+        [HttpGet]
+        [Route("GetFirstSecondThirdRankInAllDivision")]
+        public async Task<ActionResult<IEnumerable<TopRankInAllDivisionBySubject>>> GetFirstSecondThirdRankInAllDivisionData(int testTypeId, int monthId, int yearId, int standardId, int streamId)
+        {
+            var data = await _studentReportRepository.GetFirstSecondThirdRankInAllDivision(testTypeId, monthId, yearId, standardId, streamId);
+            return Ok(data);
+        }
+
+        [HttpGet]
+        [Route("GetHighestInAllSubjectInAllDivision")]
+        public async Task<ActionResult<IEnumerable<TopRankInAllDivisionBySubject>>> GetHighestInAllSubjectInAllDivisionData(int testTypeId, int monthId, int yearId, int standardId, int streamId)
+        {
+            var data = await _studentReportRepository.GetHighestInAllSubjectInAllDivision(testTypeId, monthId, yearId, standardId, streamId);
+            return Ok(data);
+        }
+
 
         [Route("UploadStudentMarks")]
         [HttpPost]

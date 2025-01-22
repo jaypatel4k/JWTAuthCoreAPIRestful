@@ -85,6 +85,8 @@ namespace JWTAuthCoreAPIRestful.Interface
         Task<IEnumerable<TopThreeRankInAllDivision>> GetTopThreeRankInAllDivision(int testTypeId, int monthId, int yearId, int standardId, int streamId);
         Task<IEnumerable<TopRankInAllDivisionBySubject>> GetTopRankBySubjectInAllDivision(int testTypeId, int monthId, int yearId, int standardId, int streamId);
 
+        Task<IEnumerable<TopThreeRankInAllDivision>> GetFirstSecondThirdRankInAllDivision(int testTypeId, int monthId, int yearId, int standardId, int streamId);
 
+        Task<IEnumerable<TopRankInAllDivisionBySubject>> GetHighestInAllSubjectInAllDivision(int testTypeId, int monthId, int yearId, int standardId, int streamId);
     }
 }

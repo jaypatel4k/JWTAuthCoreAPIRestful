@@ -351,7 +351,7 @@ namespace JWTAuthCoreAPIRestful.Repository
         }
 
 
-        //RANK
+        //RANK By Class
         public async Task<IEnumerable<TopRankInClassDTO>> GetTopThreeRankInClass(int testTypeId, int monthId, int yearId, int standardId, int divisionId, int streamId)
         {
             List<Student> listStud = await _dbcontext.Student.ToListAsync();
@@ -450,6 +450,7 @@ namespace JWTAuthCoreAPIRestful.Repository
             return result.OrderByDescending(y => y.TotalMarks).ThenBy(x => x.SubjectName).ToList().Where(x => x.Rank == 1);
         }
 
+        //Rank By AllDivision
         public async Task<IEnumerable<TopThreeRankInAllDivision>> GetTopThreeRankInAllDivision(int testTypeId, int monthId, int yearId, int standardId, int streamId)
         {
             List<Student> listStud = await _dbcontext.Student.ToListAsync();
@@ -553,6 +554,91 @@ namespace JWTAuthCoreAPIRestful.Repository
             //return result.Where(x => x.Rank == 1);
         }
 
+        public async Task<IEnumerable<TopThreeRankInAllDivision>> GetFirstSecondThirdRankInAllDivision(int testTypeId, int monthId, int yearId, int standardId, int streamId)
+        {
+            List<Student> listStud = await _dbcontext.Student.ToListAsync();
+            List<StudentMark> listMark = await _dbcontext.StudentMark.ToListAsync();
+            List<Subject> listSubject = await _dbcontext.Subject.ToListAsync();
+            List<Division> listDivision = await _dbcontext.Division.ToListAsync();
+
+            var result = (from stud in listStud
+                          join mark in listMark on stud.Id equals mark.StudentId
+                          join sub in listSubject on mark.SubjectId equals sub.Id
+                          join div in listDivision on stud.DivisionId equals div.Id
+                          where mark.StandardId == standardId
+                          && mark.TestTypeId == testTypeId && mark.MonthId == monthId && mark.YearId == yearId && mark.StreamId == streamId
+                          group new { stud, mark, div } by new { stud.Name, stud.RollNo, div.DivisionName } into g
+                          select new TopThreeRankInAllDivision
+                          {
+                              RollNo = g.Key.RollNo,
+                              Name = g.Key.Name,
+                              Division = g.Key.DivisionName,
+                              Rank = 0,// Placeholder for rank
+                              TotalMarks = (int)g.Sum(x => x.mark.Marks)
+                          }).OrderByDescending(x => x.TotalMarks).ToList();
+
+            var distinctDivision = result.DistinctBy(x => x.Division).ToList().Select(y => y.Division).ToList();
+            Dictionary<string, List<TopThreeRankInAllDivision>> mydictmydict = new Dictionary<string, List<TopThreeRankInAllDivision>>();
+            for (int i = 0; i < distinctDivision.Count; i++)
+            {
+                var test = result.Where(x => x.Division == distinctDivision[i])
+                            .OrderByDescending(x => x.TotalMarks).Take(3).ToList();
+                    int cnt = 1;
+                    for (int j = 0; j < test.Count(); j++)
+                    {
+                        test[j].Rank = cnt++;
+                    }
+                mydictmydict.Add(distinctDivision[i], test);
+            }
+
+
+            return result.Where(x => x.Rank > 0).OrderBy(y => y.Rank).ThenBy(d=>d.Division).ToList();
+            
+        }
+
+        public async Task<IEnumerable<TopRankInAllDivisionBySubject>> GetHighestInAllSubjectInAllDivision(int testTypeId, int monthId, int yearId, int standardId, int streamId)
+        {
+            List<Student> listStud = await _dbcontext.Student.ToListAsync();
+            List<StudentMark> listMark = await _dbcontext.StudentMark.ToListAsync();
+            List<Subject> listSubject = await _dbcontext.Subject.ToListAsync();
+            List<Division> listDivision = await _dbcontext.Division.ToListAsync();
+
+            var result = (from stud in listStud
+                          join mark in listMark on stud.Id equals mark.StudentId
+                          join sub in listSubject on mark.SubjectId equals sub.Id
+                          join div in listDivision on stud.DivisionId equals div.Id
+                          where mark.StandardId == standardId
+                          && mark.TestTypeId == testTypeId && mark.MonthId == monthId && mark.YearId == yearId && mark.StreamId == streamId
+                          group new { stud, mark, div, sub } by new { stud.Name, stud.RollNo, div.DivisionName, sub.SubjectName } into g
+                          select new TopRankInAllDivisionBySubject
+                          {
+                              RollNo = g.Key.RollNo,
+                              Name = g.Key.Name,
+                              Division = g.Key.DivisionName,
+                              SubjectName = g.Key.SubjectName,
+                              TotalMarks = (int)g.Max(x => x.mark.Marks),
+                              Rank = 0 // Placeholder for rank
+                          }).OrderByDescending(x => x.TotalMarks).ToList();
+            // Assign ranks
+            var groupedResult = from p in result
+                                group p by new {p.Division, p.SubjectName } into g
+                                select g.OrderByDescending(x => x.TotalMarks);
+            foreach (var group in groupedResult)
+            {
+                int rank = 1;
+                var mxMark = group.Max(x => x.TotalMarks);
+                foreach (var item in group)
+                {
+                    if (item.TotalMarks == mxMark)
+                        item.Rank = rank;
+                    else
+                        item.Rank = 0;
+                }
+
+            }
+
+            return result.OrderByDescending(y => y.TotalMarks).ThenBy(x => x.SubjectName).ToList().Where(x => x.Rank == 1);
+        }
 
     }
 }
