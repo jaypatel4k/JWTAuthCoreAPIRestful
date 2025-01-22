@@ -45,6 +45,7 @@ namespace JWTAuthCoreAPIRestful.Interface
         //StudentMarks
         Task<IEnumerable<StudentMark>> GetAllStudentMarkAsync();
         Task<StudentMark> GetStudentMarkByIdAsync(int studentMarkid);
+        Task<StudentMark> GetExistingStudentMarkIfAny(int subjectid,int studentid, int testTypeId, int monthId, int yearId, int standardId, int divisionId);
         Task AddStudentMarkAsync(StudentMark studentMark);
         Task UpdateStudentMarkAync(StudentMark studentMark);
         Task DeleteStudentMarkAsync(int studentMarkid);
@@ -76,9 +77,14 @@ namespace JWTAuthCoreAPIRestful.Interface
         //year
         Task<IEnumerable<Year>> GetYearAsync();
 
-        //Rank
+        //Rank by class
         Task<IEnumerable<TopRankInClassDTO>> GetTopThreeRankInClass(int testTypeId, int monthId, int yearId, int standardId, int divisionId, int streamId);
         Task<IEnumerable<TopRankInClassBySubject>> GetTopRankBySubjectInClass(int testTypeId, int monthId, int yearId, int standardId, int divisionId, int streamId);
+
+        //Rank in All Division
+        Task<IEnumerable<TopThreeRankInAllDivision>> GetTopThreeRankInAllDivision(int testTypeId, int monthId, int yearId, int standardId, int streamId);
+        Task<IEnumerable<TopRankInAllDivisionBySubject>> GetTopRankBySubjectInAllDivision(int testTypeId, int monthId, int yearId, int standardId, int streamId);
+
 
     }
 }

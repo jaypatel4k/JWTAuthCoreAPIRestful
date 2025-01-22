@@ -6,6 +6,7 @@ using JWTAuthCoreAPIRestful.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Data;
 using System.IO;
 using System.Text;
@@ -96,10 +97,26 @@ namespace JWTAuthCoreAPIRestful.Controllers
             return Ok(data);
         }
 
+        [HttpGet]
+        [Route("GetTopThreeRankInAllDivision")]
+        public async Task<ActionResult<IEnumerable<TopRankInAllDivisionBySubject>>> GetTopThreeRankInAllDivisionData(int testTypeId, int monthId, int yearId, int standardId, int streamId)
+        {
+            var data = await _studentReportRepository.GetTopThreeRankInAllDivision(testTypeId, monthId, yearId, standardId, streamId);
+            return Ok(data);
+        }
+
+        [HttpGet]
+        [Route("GetTopRankBySubjectInAllDivision")]
+        public async Task<ActionResult<IEnumerable<TopRankInAllDivisionBySubject>>> GetTopRankBySubjectInAllDivisionData(int testTypeId, int monthId, int yearId, int standardId, int streamId)
+        {
+            var data = await _studentReportRepository.GetTopRankBySubjectInAllDivision(testTypeId, monthId, yearId, standardId, streamId);
+            return Ok(data);
+        }
+
         [Route("UploadStudentMarks")]
         [HttpPost]
         public async Task<IActionResult> InsertStudentMarks(IFormFile file, int testTypeId,int monthId,int yearId,int standardId, int divisionId,
-            int streamId,int testHeldOfMarkId)
+            int streamId)
         {
             if (file == null || file.Length == 0)
             {
@@ -171,7 +188,8 @@ namespace JWTAuthCoreAPIRestful.Controllers
                                         studentMark.StandardId = standardId;
                                         studentMark.DivisionId = divisionId;
                                         studentMark.StreamId = streamId;//cell.Value.GetText() == "AB"
-                                        studentMark.TestHeldOfMarkId = testHeldOfMarkId;
+                                       // studentMark.TestHeldOfMarkId = testHeldOfMarkId;
+                                         studentMark.TestHeldOfMarkId = 0;
                                         if (cell.Value.IsNumber)
                                         {
                                             studentMark.Marks = (decimal)cell.Value.GetNumber();
@@ -194,7 +212,8 @@ namespace JWTAuthCoreAPIRestful.Controllers
                                         dataRow["StreamId"] = studentMark.StreamId;
                                         dataRow["StudentId"] = studentMark.StudentId;
                                         dataRow["SubjectId"] = studentMark.SubjectId;
-                                        dataRow["TestHeldOfMarkId"] = studentMark.TestHeldOfMarkId;
+                                        dataRow["TestHeldOfMarkId"] = 0;
+                                        // dataRow["TestHeldOfMarkId"] = studentMark.TestHeldOfMarkId;
                                         dataRow["Marks"] = studentMark.Marks;
                                         dataRow["Remarks"] = studentMark.Remarks;
 
@@ -208,6 +227,7 @@ namespace JWTAuthCoreAPIRestful.Controllers
                         }//End Of Row for each
                         await _studentReportRepository.BeginTransaction();
                         StudentMark studMarks;
+                        StudentMark studMarksTemp;
                         if (dtMarks.Rows.Count > 0)
                         {
                             foreach (DataRow row in dtMarks.Rows)
@@ -221,10 +241,20 @@ namespace JWTAuthCoreAPIRestful.Controllers
                                 studMarks.StreamId = Convert.ToInt32(row["StreamId"]);
                                 studMarks.StudentId = Convert.ToInt32(row["StudentId"]);
                                 studMarks.SubjectId = Convert.ToInt32(row["SubjectId"]);
-                                studMarks.TestHeldOfMarkId = Convert.ToInt32(row["TestHeldOfMarkId"]);
+                                //studMarks.TestHeldOfMarkId = Convert.ToInt32(row["TestHeldOfMarkId"]);
+                                studMarks.TestHeldOfMarkId = 0;
                                 studMarks.Marks = Convert.ToDecimal(row["Marks"]);
                                 studMarks.Remarks = row["Remarks"] as string;
-                                await  _studentReportRepository.AddStudentMarkAsync(studMarks);
+                                var studMarkExist = await _studentReportRepository.GetExistingStudentMarkIfAny(studMarks.SubjectId,studMarks.StudentId, studMarks.TestTypeId, studMarks.MonthId, studMarks.YearId, studMarks.StandardId, studMarks.DivisionId);
+                                if (studMarkExist !=null)
+                                {
+                                    await _studentReportRepository.DeleteStudentMarkAsync(studMarkExist.Id);
+                                    await _studentReportRepository.AddStudentMarkAsync(studMarks);
+                                }
+                                else
+                                {
+                                    await _studentReportRepository.AddStudentMarkAsync(studMarks);
+                                }
                             }
                         }
                         await _studentReportRepository.CommitTransaction();
@@ -367,8 +397,6 @@ namespace JWTAuthCoreAPIRestful.Controllers
                             student.DivisionId =Convert.ToInt32(divisionId);
                             student.StandId = Convert.ToInt32(standadId);
 
-                            //_studentReportRepository.Entry
-// _studentReportRepository.Entry
                             var studentExist = await _studentReportRepository.GetStudentByNameAsync(student.Name);
                             if (studentExist == null)
                             {
