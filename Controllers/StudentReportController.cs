@@ -91,7 +91,7 @@ namespace JWTAuthCoreAPIRestful.Controllers
         }
         [HttpGet]
         [Route("GetTopRankBySubjectInClass")]
-        public async Task<ActionResult<IEnumerable<TopRankInClassBySubject>>> GetTopRankBySubjectInClassData(int testTypeId, int monthId, int yearId, int standardId, int divisionId,int streamId)
+        public async Task<ActionResult<IEnumerable<TopRankInClassBySubjectNoRank>>> GetTopRankBySubjectInClassData(int testTypeId, int monthId, int yearId, int standardId, int divisionId,int streamId)
         {
             var data = await _studentReportRepository.GetTopRankBySubjectInClass(testTypeId, monthId, yearId, standardId, divisionId,streamId);
             return Ok(data);

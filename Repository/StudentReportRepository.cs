@@ -370,45 +370,45 @@ namespace JWTAuthCoreAPIRestful.Repository
                               RollNo = g.Key.RollNo,
                               Name = g.Key.Name,
                               Rank = 0 ,// Placeholder for rank
-                              TotalMarks = (int)g.Sum(x => x.mark.Marks)
-                          }).OrderByDescending(x => x.TotalMarks).ToList();
+                              Total = (int)g.Sum(x => x.mark.Marks)
+                          }).OrderByDescending(x => x.Total).ToList();
 
             var top3Marks = (from m in result
-                             orderby m.TotalMarks descending
+                             orderby m.Total descending
                              select new
                              {
-                                 top3mark = m.TotalMarks
+                                 top3mark = m.Total
                              }).Take(3).Distinct().ToList();
             var top3Result = (from m in result
-                              join t in top3Marks on m.TotalMarks equals t.top3mark
+                              join t in top3Marks on m.Total equals t.top3mark
                               select m).Distinct().ToList();
             int pevmark = 0;
             int rank = 1;
             // Assign ranks
             for (int i = 0; i < top3Result.Count; i++)
             {
-               if (pevmark < result[i].TotalMarks)
+               if (pevmark < result[i].Total)
                 {
                     result[i].Rank = rank;
-                    pevmark = result[i].TotalMarks;
+                    pevmark = result[i].Total;
                 }
-               else if(pevmark > result[i].TotalMarks)
+               else if(pevmark > result[i].Total)
                 {
                     rank++;
                     result[i].Rank = rank;
-                    pevmark = result[i].TotalMarks;
+                    pevmark = result[i].Total;
                 }
-                else if (pevmark == result[i].TotalMarks)
+                else if (pevmark == result[i].Total)
                 {
                     result[i].Rank = rank;
-                    pevmark = result[i].TotalMarks;
+                    pevmark = result[i].Total;
                 }
 
             }
 
             return top3Result;
         }
-        public async Task<IEnumerable<TopRankInClassBySubject>> GetTopRankBySubjectInClass(int testTypeId, int monthId, int yearId, int standardId, int divisionId, int streamId)
+        public async Task<IEnumerable<TopRankInClassBySubjectNoRank>> GetTopRankBySubjectInClass(int testTypeId, int monthId, int yearId, int standardId, int divisionId, int streamId)
         {
             List<Student> listStud = await _dbcontext.Student.ToListAsync();
             List<StudentMark> listMark = await _dbcontext.StudentMark.ToListAsync();
@@ -424,22 +424,22 @@ namespace JWTAuthCoreAPIRestful.Repository
                           {
                               RollNo = g.Key.RollNo,
                               Name = g.Key.Name,
-                              SubjectName = g.Key.SubjectName,
-                              TotalMarks = (int)g.Max(x => x.mark.Marks),
+                              Subject = g.Key.SubjectName,
+                              Total = (int)g.Max(x => x.mark.Marks),
                               Rank = 0 // Placeholder for rank
-                          }).OrderByDescending(x => x.TotalMarks).ToList();
+                          }).OrderByDescending(x => x.Total).ToList();
 
             // Assign ranks
             var groupedResult = from p in result
-                                group p by new { p.SubjectName } into g
-                                select g.OrderByDescending(x => x.TotalMarks);
+                                group p by new { p.Subject } into g
+                                select g.OrderByDescending(x => x.Total);
             foreach (var group in groupedResult)
             {
                 int rank = 1;
-                var mxMark = group.Max(x => x.TotalMarks);
+                var mxMark = group.Max(x => x.Total);
                 foreach (var item in group)
                 {
-                   if(item.TotalMarks == mxMark)
+                   if(item.Total == mxMark)
                         item.Rank = rank;
                    else
                         item.Rank = 0;
@@ -448,7 +448,16 @@ namespace JWTAuthCoreAPIRestful.Repository
             }
 
             //return result.Where(x => x.Rank == 1);
-            return result.OrderByDescending(y => y.TotalMarks).ThenBy(x => x.SubjectName).ToList().Where(x => x.Rank == 1);
+            var result1= result.OrderByDescending(y => y.Total).ThenBy(x => x.Subject).ToList().Where(x => x.Rank == 1);
+            var fresult = (from r in result1
+                           select new TopRankInClassBySubjectNoRank
+                           {
+                               RollNo = r.RollNo,
+                               Name = r.Name,
+                               Subject = r.Subject,
+                               Marks = r.Total
+                           });
+            return fresult;
         }
 
         //Rank By AllDivision
@@ -470,40 +479,40 @@ namespace JWTAuthCoreAPIRestful.Repository
                           {
                               RollNo = g.Key.RollNo,
                               Name = g.Key.Name,
-                              Division = g.Key.DivisionName,
+                              Div = g.Key.DivisionName,
                               Rank = 0,// Placeholder for rank
-                              TotalMarks = (int)g.Sum(x => x.mark.Marks)
-                          }).OrderByDescending(x => x.TotalMarks).ToList();
+                              Total = (int)g.Sum(x => x.mark.Marks)
+                          }).OrderByDescending(x => x.Total).ToList();
 
             var top3Marks = (from m in result
-                             orderby m.TotalMarks descending
+                             orderby m.Total descending
                              select new
                              {
-                                 top3mark = m.TotalMarks
+                                 top3mark = m.Total
                              }).Take(3).Distinct().ToList();
             var top3Result = (from m in result
-                              join t in top3Marks on m.TotalMarks equals t.top3mark
+                              join t in top3Marks on m.Total equals t.top3mark
                               select m).Distinct().ToList();
             int pevmark = 0;
             int rank = 1;
             // Assign ranks
             for (int i = 0; i < top3Result.Count; i++)
             {
-                if (pevmark < result[i].TotalMarks)
+                if (pevmark < result[i].Total)
                 {
                     result[i].Rank = rank;
-                    pevmark = result[i].TotalMarks;
+                    pevmark = result[i].Total;
                 }
-                else if (pevmark > result[i].TotalMarks)
+                else if (pevmark > result[i].Total)
                 {
                     rank++;
                     result[i].Rank = rank;
-                    pevmark = result[i].TotalMarks;
+                    pevmark = result[i].Total;
                 }
-                else if (pevmark == result[i].TotalMarks)
+                else if (pevmark == result[i].Total)
                 {
                     result[i].Rank = rank;
-                    pevmark = result[i].TotalMarks;
+                    pevmark = result[i].Total;
                 }
 
             }
@@ -528,22 +537,22 @@ namespace JWTAuthCoreAPIRestful.Repository
                           {
                               RollNo = g.Key.RollNo,
                               Name = g.Key.Name,
-                              Division = g.Key.DivisionName,
-                              SubjectName = g.Key.SubjectName,
-                              TotalMarks = (int)g.Max(x => x.mark.Marks),
+                              Div = g.Key.DivisionName,
+                              Subject = g.Key.SubjectName,
+                              Marks = (int)g.Max(x => x.mark.Marks),
                               Rank = 0 // Placeholder for rank
-                          }).OrderByDescending(x => x.TotalMarks).ToList();
+                          }).OrderByDescending(x => x.Marks).ToList();
             // Assign ranks
             var groupedResult = from p in result
-                                group p by new { p.SubjectName } into g
-                                select g.OrderByDescending(x => x.TotalMarks);
+                                group p by new { p.Subject } into g
+                                select g.OrderByDescending(x => x.Marks);
             foreach (var group in groupedResult)
             {
                 int rank = 1;
-                var mxMark = group.Max(x => x.TotalMarks);
+                var mxMark = group.Max(x => x.Marks);
                 foreach (var item in group)
                 {
-                    if (item.TotalMarks == mxMark)
+                    if (item.Marks == mxMark)
                         item.Rank = rank;
                     else
                         item.Rank = 0;
@@ -551,16 +560,16 @@ namespace JWTAuthCoreAPIRestful.Repository
 
             }
 
-            var result1 = result.OrderByDescending(y => y.TotalMarks).ThenBy(x => x.SubjectName).ToList().
+            var result1 = result.OrderByDescending(y => y.Marks).ThenBy(x => x.Subject).ToList().
                         Where(x => x.Rank == 1);
             var fresult = (from r in result1
                            select new TopRankInAllDivisionBySubjectNoRank
                            {
                                RollNo = r.RollNo,
                                Name = r.Name,
-                               Division = r.Division,
-                               SubjectName = r.SubjectName,
-                               TotalMarks = r.TotalMarks
+                               Div = r.Div,
+                               Subject = r.Subject,
+                               Marks = r.Marks
                            });
             return fresult;
         }
@@ -583,17 +592,17 @@ namespace JWTAuthCoreAPIRestful.Repository
                           {
                               RollNo = g.Key.RollNo,
                               Name = g.Key.Name,
-                              Division = g.Key.DivisionName,
+                              Div = g.Key.DivisionName,
                               Rank = 0,// Placeholder for rank
-                              TotalMarks = (int)g.Sum(x => x.mark.Marks)
-                          }).OrderByDescending(x => x.TotalMarks).ToList();
+                              Total = (int)g.Sum(x => x.mark.Marks)
+                          }).OrderByDescending(x => x.Total).ToList();
 
-            var distinctDivision = result.DistinctBy(x => x.Division).ToList().Select(y => y.Division).ToList();
+            var distinctDivision = result.DistinctBy(x => x.Div).ToList().Select(y => y.Div).ToList();
             Dictionary<string, List<TopThreeRankInAllDivision>> mydictmydict = new Dictionary<string, List<TopThreeRankInAllDivision>>();
             for (int i = 0; i < distinctDivision.Count; i++)
             {
-                var test = result.Where(x => x.Division == distinctDivision[i])
-                            .OrderByDescending(x => x.TotalMarks).Take(3).ToList();
+                var test = result.Where(x => x.Div == distinctDivision[i])
+                            .OrderByDescending(x => x.Total).Take(3).ToList();
                     int cnt = 1;
                     for (int j = 0; j < test.Count(); j++)
                     {
@@ -603,7 +612,7 @@ namespace JWTAuthCoreAPIRestful.Repository
             }
 
 
-            return result.Where(x => x.Rank > 0).OrderBy(y => y.Rank).ThenBy(d=>d.Division).ToList();
+            return result.Where(x => x.Rank > 0).OrderBy(y => y.Rank).ThenBy(d=>d.Div).ToList();
             
         }
 
@@ -625,22 +634,22 @@ namespace JWTAuthCoreAPIRestful.Repository
                           {
                               RollNo = g.Key.RollNo,
                               Name = g.Key.Name,
-                              Division = g.Key.DivisionName,
-                              SubjectName = g.Key.SubjectName,
-                              TotalMarks = (int)g.Max(x => x.mark.Marks),
+                              Div = g.Key.DivisionName,
+                              Subject = g.Key.SubjectName,
+                              Marks = (int)g.Max(x => x.mark.Marks),
                               Rank = 0 // Placeholder for rank
-                          }).OrderByDescending(x => x.TotalMarks).ToList();
+                          }).OrderByDescending(x => x.Marks).ToList();
             // Assign ranks
             var groupedResult = from p in result
-                                group p by new {p.Division, p.SubjectName } into g
-                                select g.OrderByDescending(x => x.TotalMarks);
+                                group p by new {p.Div, p.Subject } into g
+                                select g.OrderByDescending(x => x.Marks);
             foreach (var group in groupedResult)
             {
                 int rank = 1;
-                var mxMark = group.Max(x => x.TotalMarks);
+                var mxMark = group.Max(x => x.Marks);
                 foreach (var item in group)
                 {
-                    if (item.TotalMarks == mxMark)
+                    if (item.Marks == mxMark)
                         item.Rank = rank;
                     else
                         item.Rank = 0;
@@ -648,15 +657,15 @@ namespace JWTAuthCoreAPIRestful.Repository
 
             }
 
-            var result1 = result.OrderByDescending(y => y.TotalMarks).ThenBy(x => x.SubjectName).ToList().Where(x => x.Rank == 1);
+            var result1 = result.OrderByDescending(y => y.Marks).ThenBy(x => x.Subject).ToList().Where(x => x.Rank == 1);
             var fresult = (from r in result1
                            select new TopRankInAllDivisionBySubjectNoRank
                            {
                                RollNo = r.RollNo,
                                Name = r.Name,
-                               Division = r.Division,
-                               SubjectName = r.SubjectName,
-                               TotalMarks = r.TotalMarks
+                               Div = r.Div,
+                               Subject = r.Subject,
+                               Marks = r.Marks
                            });
             return fresult;
         }
