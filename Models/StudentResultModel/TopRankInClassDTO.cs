@@ -36,8 +36,13 @@
         public string SubjectName { get; set; }
         public int TotalMarks { get; set; }
         public int Rank { get; set; }
-        
-
-
+    }
+    public class TopRankInAllDivisionBySubjectNoRank
+    {
+        public int RollNo { get; set; }
+        public string Name { get; set; }
+        public string Division { get; set; }
+        public string SubjectName { get; set; }
+        public int TotalMarks { get; set; }
     }
 }

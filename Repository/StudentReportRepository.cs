@@ -1,5 +1,6 @@
 ﻿using DocumentFormat.OpenXml.Drawing.Charts;
 using DocumentFormat.OpenXml.InkML;
+using DocumentFormat.OpenXml.Wordprocessing;
 using JWTAuthCoreAPIRestful.Data;
 using JWTAuthCoreAPIRestful.Interface;
 using JWTAuthCoreAPIRestful.Models.StudentResultModel;
@@ -509,7 +510,7 @@ namespace JWTAuthCoreAPIRestful.Repository
 
             return top3Result;
         }
-        public async Task<IEnumerable<TopRankInAllDivisionBySubject>> GetTopRankBySubjectInAllDivision(int testTypeId, int monthId, int yearId, int standardId,int streamId)
+        public async Task<IEnumerable<TopRankInAllDivisionBySubjectNoRank>> GetTopRankBySubjectInAllDivision(int testTypeId, int monthId, int yearId, int standardId, int streamId)
         {
             List<Student> listStud = await _dbcontext.Student.ToListAsync();
             List<StudentMark> listMark = await _dbcontext.StudentMark.ToListAsync();
@@ -550,8 +551,18 @@ namespace JWTAuthCoreAPIRestful.Repository
 
             }
 
-            return result.OrderByDescending(y => y.TotalMarks).ThenBy(x => x.SubjectName).ToList().Where(x => x.Rank == 1);
-            //return result.Where(x => x.Rank == 1);
+            var result1 = result.OrderByDescending(y => y.TotalMarks).ThenBy(x => x.SubjectName).ToList().
+                        Where(x => x.Rank == 1);
+            var fresult = (from r in result1
+                           select new TopRankInAllDivisionBySubjectNoRank
+                           {
+                               RollNo = r.RollNo,
+                               Name = r.Name,
+                               Division = r.Division,
+                               SubjectName = r.SubjectName,
+                               TotalMarks = r.TotalMarks
+                           });
+            return fresult;
         }
 
         public async Task<IEnumerable<TopThreeRankInAllDivision>> GetFirstSecondThirdRankInAllDivision(int testTypeId, int monthId, int yearId, int standardId, int streamId)
@@ -596,7 +607,7 @@ namespace JWTAuthCoreAPIRestful.Repository
             
         }
 
-        public async Task<IEnumerable<TopRankInAllDivisionBySubject>> GetHighestInAllSubjectInAllDivision(int testTypeId, int monthId, int yearId, int standardId, int streamId)
+        public async Task<IEnumerable<TopRankInAllDivisionBySubjectNoRank>> GetHighestInAllSubjectInAllDivision(int testTypeId, int monthId, int yearId, int standardId, int streamId)
         {
             List<Student> listStud = await _dbcontext.Student.ToListAsync();
             List<StudentMark> listMark = await _dbcontext.StudentMark.ToListAsync();
@@ -637,7 +648,17 @@ namespace JWTAuthCoreAPIRestful.Repository
 
             }
 
-            return result.OrderByDescending(y => y.TotalMarks).ThenBy(x => x.SubjectName).ToList().Where(x => x.Rank == 1);
+            var result1 = result.OrderByDescending(y => y.TotalMarks).ThenBy(x => x.SubjectName).ToList().Where(x => x.Rank == 1);
+            var fresult = (from r in result1
+                           select new TopRankInAllDivisionBySubjectNoRank
+                           {
+                               RollNo = r.RollNo,
+                               Name = r.Name,
+                               Division = r.Division,
+                               SubjectName = r.SubjectName,
+                               TotalMarks = r.TotalMarks
+                           });
+            return fresult;
         }
 
     }

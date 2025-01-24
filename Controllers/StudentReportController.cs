@@ -107,7 +107,7 @@ namespace JWTAuthCoreAPIRestful.Controllers
 
         [HttpGet]
         [Route("GetTopRankBySubjectInAllDivision")]
-        public async Task<ActionResult<IEnumerable<TopRankInAllDivisionBySubject>>> GetTopRankBySubjectInAllDivisionData(int testTypeId, int monthId, int yearId, int standardId, int streamId)
+        public async Task<ActionResult<IEnumerable<TopRankInAllDivisionBySubjectNoRank>>> GetTopRankBySubjectInAllDivisionData(int testTypeId, int monthId, int yearId, int standardId, int streamId)
         {
             var data = await _studentReportRepository.GetTopRankBySubjectInAllDivision(testTypeId, monthId, yearId, standardId, streamId);
             return Ok(data);
@@ -122,7 +122,7 @@ namespace JWTAuthCoreAPIRestful.Controllers
 
         [HttpGet]
         [Route("GetHighestInAllSubjectInAllDivision")]
-        public async Task<ActionResult<IEnumerable<TopRankInAllDivisionBySubject>>> GetHighestInAllSubjectInAllDivisionData(int testTypeId, int monthId, int yearId, int standardId, int streamId)
+        public async Task<ActionResult<IEnumerable<TopRankInAllDivisionBySubjectNoRank>>> GetHighestInAllSubjectInAllDivisionData(int testTypeId, int monthId, int yearId, int standardId, int streamId)
         {
             var data = await _studentReportRepository.GetHighestInAllSubjectInAllDivision(testTypeId, monthId, yearId, standardId, streamId);
             return Ok(data);
