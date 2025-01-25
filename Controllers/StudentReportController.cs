@@ -18,9 +18,11 @@ namespace JWTAuthCoreAPIRestful.Controllers
     public class StudentReportController : ControllerBase
     {
         private readonly IStudentReportRepository _studentReportRepository;
-        public StudentReportController(IStudentReportRepository studentReportRepository)
+        private readonly ILogger<StudentReportController> _logger;
+        public StudentReportController(IStudentReportRepository studentReportRepository, ILogger<StudentReportController> logger)
         {
             _studentReportRepository = studentReportRepository;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -65,6 +67,7 @@ namespace JWTAuthCoreAPIRestful.Controllers
         [Route("GetMonth")]
         public async Task<ActionResult<IEnumerable<Month>>> GetMonth()
         {
+            _logger.LogInformation("I am inside Get Month method");
             var data = await _studentReportRepository.GetMonthAsync();
             return Ok(data);
         }
