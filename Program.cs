@@ -1,3 +1,4 @@
+using JWTAuthCoreAPIRestful.CustomMiddleware;
 using JWTAuthCoreAPIRestful.Data;
 using JWTAuthCoreAPIRestful.Interface;
 using JWTAuthCoreAPIRestful.Repository;
@@ -73,6 +74,7 @@ app.UseCors("AllowOrigin");
 app.UseAuthentication(); //JWT Authentication
 app.UseAuthorization();
 
+app.UseMiddleware<ErrorHandlingMiddleware>();
 app.MapControllers();
 
 app.Run();
