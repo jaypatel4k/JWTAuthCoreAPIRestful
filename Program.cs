@@ -3,6 +3,7 @@ using JWTAuthCoreAPIRestful.Data;
 using JWTAuthCoreAPIRestful.Interface;
 using JWTAuthCoreAPIRestful.Repository;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
@@ -23,7 +24,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy(name: "AllowOrigin",
         builder =>
         {
-            builder.WithOrigins("https://localhost:44351", "http://localhost:4200", "http://localhost:86")
+            builder.WithOrigins("https://localhost:44351", "http://localhost:4200", "http://localhost:86", "http://localhost:83")
                                 .AllowAnyOrigin()
                                 .AllowAnyHeader()
                                 .AllowAnyMethod();
@@ -51,7 +52,27 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         ValidAudience = builder.Configuration["Jwt:Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
     };
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = ctx =>
+        {
+            ctx.Request.Cookies.TryGetValue("accessToken", out var accessToken);
+            if (!string.IsNullOrEmpty(accessToken))
+                ctx.Token = accessToken;
+            return Task.CompletedTask;
+        }
+    };
 });
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MemoryBufferThreshold = int.MaxValue;
+    options.MultipartBodyLengthLimit = int.MaxValue;
+});
+builder.Services.Configure<IISServerOptions>(options => {
+    options.MaxRequestBodyBufferSize = int.MaxValue;
+    options.AllowSynchronousIO = true;
+});
+
 builder.Services.AddDbContext<JWTAuthCRUDContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("myconn")));
 builder.Services.AddTransient<IUserRepository,UserRepository>();
 builder.Services.AddTransient<IProductRepository, ProductRepository>();

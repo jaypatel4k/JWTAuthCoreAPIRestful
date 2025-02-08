@@ -25,19 +25,27 @@ namespace JWTAuthCoreAPIRestful.Controllers
         [HttpPost]
         public IActionResult Login([FromBody] LoginModel login)
         {
-            IActionResult reponse = Unauthorized();
+            IActionResult response;
             var user = AuthenticateUser(login);
-            if(user == null)
+            if (user == null)
             {
-                return Unauthorized();
+                var errorResponse = new
+                {
+                    StatusCode = StatusCodes.Status401Unauthorized,
+                    Message = "Access denied. Please provide valid credentials."
+                };
+                // Use StatusCode method to return 401 Unauthorized status and custom data
+                return StatusCode(StatusCodes.Status401Unauthorized, errorResponse);
 
+                // Returns a 401 Unauthorized response
+                //response = Unauthorized(new { message = "Access denied. Please provide valid credentials." });
             }
-            if(user != null)
+            else
             {
                 var tokenString = GenerateJSONWebToken(user);
-                return Ok(new { token = tokenString });
+                response = Ok(new { token = tokenString });
             }
-            return (IActionResult)Response;
+            return response;
         }
 
 
@@ -46,9 +54,8 @@ namespace JWTAuthCoreAPIRestful.Controllers
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"])); 
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
             var claims = new[] {
-            new Claim(JwtRegisteredClaimNames.Sub, userInfo.Username),
+            new Claim("Username", userInfo.Username),
             new Claim(JwtRegisteredClaimNames.Email, userInfo.EmailAddress),
-            new Claim("DateOfJoing", userInfo.DateOfJoing.ToString("yyyy-MM-dd")), 
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
             var token = new JwtSecurityToken(_config["Jwt:Issuer"],

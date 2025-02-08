@@ -25,7 +25,10 @@ namespace JWTAuthCoreAPIRestful.Repository
         }
         public async Task RollBackTrasaction()
         {
-            await _dbcontext.Database.RollbackTransactionAsync();
+            if (_dbcontext.Database.CurrentTransaction != null)
+            {
+                await _dbcontext.Database.RollbackTransactionAsync();
+            }
         }
 
         public async Task CommitTransaction()
