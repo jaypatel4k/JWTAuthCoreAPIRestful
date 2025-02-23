@@ -188,7 +188,7 @@ namespace JWTAuthCoreAPIRestful.Controllers
                                             student = await _studentReportRepository.GetStudentByNameStandardAndDivisionAsync(cell.Value.GetText().ToUpper(), model.StandardId, model.DivisionId);
                                             if (student == null)
                                             {
-                                                return NotFound("Student not exist in databse. == " + cell.Value.GetText());
+                                                return NotFound("Student not exist in databse : " + cell.Value.GetText());
                                             }
                                             else
                                             {
@@ -200,7 +200,10 @@ namespace JWTAuthCoreAPIRestful.Controllers
                                         {
                                             studentsubject = await _studentReportRepository.GetSubjectByNameAsync(rowDataSubject[cell.Address.ColumnNumber]);
                                             if (studentsubject == null)
-                                                return NotFound(rowDataSubject[cell.Address.ColumnNumber] + "not exist");
+                                            {
+                                                return NotFound("Subject name:- " + rowDataSubject[cell.Address.ColumnNumber] + " does not exist.Please enter subject in database.");
+                                            }
+                                                
                                             studentMark.Remarks = string.Empty;
                                             studentMark.StudentId = studentID;
                                             studentMark.SubjectId = studentsubject.Id;
@@ -461,6 +464,64 @@ namespace JWTAuthCoreAPIRestful.Controllers
                 return Ok("{\"success\": \"Invalid parameter\"}");
             }
         }
+
+        [Route("AddSubject")]
+        [HttpPost]
+        public async Task<IActionResult> InsertSubject([FromBody] UtilityDTO model)
+        {
+            var subject = await _studentReportRepository.GetSubjectByNameAsync(model.fieldvalue);
+
+            if (subject == null)
+            {
+                var sub = new Subject();
+                sub.SubjectName = model.fieldvalue;
+                await _studentReportRepository.AddSubjectAsync(sub);
+                return Ok("{\"success\": \"Subject added.\"}");
+            }
+            else
+            {
+                return Ok("{\"success\": \"Subject already exist.\"}");
+            }
+        }
+        [Route("AddTestType")]
+        [HttpPost]
+        public async Task<IActionResult> InsertTestType([FromBody] UtilityDTO model)
+        {
+            var testtype = await _studentReportRepository.GetTestTypeByNameAsync(model.fieldvalue);
+
+            if (testtype == null)
+            {
+                var test = new TestType();
+                test.TestTypeName = model.fieldvalue;
+                await _studentReportRepository.AddTestTypeAsync(test);
+                return Ok("{\"success\": \"Test Type added.\"}");
+            }
+            else
+            {
+                return Ok("{\"success\": \"Test Type already exist.\"}");
+            }
+        }
+
+        [Route("AddDivision")]
+        [HttpPost]
+        public async Task<IActionResult> InsertDivision([FromBody] UtilityDTO model)
+        {
+            var division = await _studentReportRepository.GetDivisionByNameAsync(model.fieldvalue);
+
+            if (division == null)
+            {
+                var div = new Division();
+                div.DivisionName = model.fieldvalue;
+                await _studentReportRepository.AddDivisionAsync(div);
+                return Ok("{\"success\": \"Division added.\"}");
+            }
+            else
+            {
+                return Ok("{\"success\": \"Division already exist.\"}");
+            }
+        }
+
+
 
     }
 }

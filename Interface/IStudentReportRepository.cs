@@ -12,6 +12,8 @@ namespace JWTAuthCoreAPIRestful.Interface
         //division
         Task<IEnumerable<Division>> GetAllDivisionAsync();
         Task<Division> GetDivisionByIdAsync(int divisionid);
+
+        Task<Division> GetDivisionByNameAsync(string strDivision);
         Task AddDivisionAsync(Division division);
         Task UpdateDivisionAync(Division division);
         Task DeleteDivisionAsync(int divisionid);
@@ -68,6 +70,7 @@ namespace JWTAuthCoreAPIRestful.Interface
         //TestType
         Task<IEnumerable<TestType>> GetAllTestTypeAsync();
         Task<TestType> GetTestTypeByIdAsync(int testTypeid);
+        Task<TestType> GetTestTypeByNameAsync(string testType);
         Task AddTestTypeAsync(TestType testType);
         Task UpdateTestTypeAync(TestType testType);
         Task DeleteTestTypeAsync(int testTypeid);

@@ -46,6 +46,10 @@ namespace JWTAuthCoreAPIRestful.Repository
         {
             return await _dbcontext.Division.FindAsync(divisionid);
         }
+        public async Task<Division> GetDivisionByNameAsync(string strDivision)
+        {
+            return await _dbcontext.Division.FirstOrDefaultAsync(s => s.DivisionName == strDivision);
+        }
 
         public async Task AddDivisionAsync(Division division)
         {
@@ -251,6 +255,8 @@ namespace JWTAuthCoreAPIRestful.Repository
             return await _dbcontext.Subject.FirstOrDefaultAsync(s => s.SubjectName == subjectName);
         }
 
+       
+        
         public async Task AddSubjectAsync(Subject subject)
         {
             await _dbcontext.Subject.AddAsync(subject);
@@ -321,6 +327,11 @@ namespace JWTAuthCoreAPIRestful.Repository
         public async Task<TestType> GetTestTypeByIdAsync(int testTypeid)
         {
             return await _dbcontext.TestType.FindAsync(testTypeid);
+        }
+
+        public async Task<TestType> GetTestTypeByNameAsync(string testType)
+        {
+            return await _dbcontext.TestType.FirstOrDefaultAsync(s => s.TestTypeName == testType);
         }
 
         public async Task AddTestTypeAsync(TestType testType)
