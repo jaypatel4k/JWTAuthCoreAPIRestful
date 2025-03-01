@@ -53,8 +53,7 @@
     }
     public class Marks5PercentFinalDTO
     {
-        public string DivisionName { get; set; }
-        public string SubjectName { get; set; }
+        public string sheetsNames { get; set; }
         public int RollNo { get; set; }
         public string Name { get; set; }
         public decimal Unit1 { get; set; }

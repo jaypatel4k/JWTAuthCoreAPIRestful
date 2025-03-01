@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Data;
 using System.Linq;
+using System.Text;
 
 namespace JWTAuthCoreAPIRestful.Repository
 {
@@ -690,13 +691,14 @@ namespace JWTAuthCoreAPIRestful.Repository
             List<Subject> listSubject = await _dbcontext.Subject.ToListAsync();
             List<TestType> listTestType = await _dbcontext.TestType.ToListAsync();
             List<Division> listDivision = await _dbcontext.Division.ToListAsync();
-            
+            List<Standard> listStandard = await _dbcontext.Standard.ToListAsync();
+
             List<List<Marks5PercentFinalDTO>> objMarks = new List<List<Marks5PercentFinalDTO>>();
             string[] aTypeGroupA = strGroupA.Split(",");
             string[] aTypeGroupB= strGroupB.Split(",");
+            StringBuilder sb = new StringBuilder();
 
-
-
+            var standardresult = listStandard.Where(x => x.Id == standardId).FirstOrDefault();
             var divlistresult = (from m in listMark
                                  join d in listDivision on m.DivisionId equals d.Id
                                  where m.StandardId == standardId
@@ -716,15 +718,22 @@ namespace JWTAuthCoreAPIRestful.Repository
 
             foreach(var divname in divlistresult)
             {
+                //int cnt = 0;
                 foreach (var subname in sublistresult)
                 {
+                   // if(cnt == 0)
+                    //{
+                        sb = sb.Append(standardresult.StandardName + "-" + divname.DivisionName + "-" + subname.SubjectName + "~");
+                      //  cnt = 1;
+                    //}
+                    
                     List<TestType> listTestTypeA = new List<TestType>();
                     List<TestType> listTestTypeB = new List<TestType>();
                     List<Marks5Percent1DTO> obj5DTO = new List<Marks5Percent1DTO>();
                     foreach (string aType in aTypeGroupA)
                     {
                         var typeresult = (from p in listTestType
-                                          where p.TestTypeName == aType
+                                          where p.Id == Convert.ToInt32(aType)
                                           select p).FirstOrDefault();
                         if (typeresult != null)
                         {
@@ -734,7 +743,7 @@ namespace JWTAuthCoreAPIRestful.Repository
                                       join sub in listSubject on mark.SubjectId equals sub.Id
                                       join ttype in listTestType on mark.TestTypeId equals ttype.Id
                                       join stud in listStud on mark.StudentId equals stud.Id
-                                      where sub.SubjectName == subname.SubjectName && ttype.TestTypeName == aType
+                                      where sub.SubjectName == subname.SubjectName && ttype.Id == Convert.ToInt32(aType)
                                       select new Marks5Percent1DTO
                                       {
                                           SubjectName = sub.SubjectName,
@@ -776,7 +785,7 @@ namespace JWTAuthCoreAPIRestful.Repository
                     foreach (string aType in aTypeGroupB)
                     {
                         var typeresult = (from p in listTestType
-                                          where p.TestTypeName == aType
+                                          where p.Id == Convert.ToInt32(aType)
                                           select p).FirstOrDefault();
                         if (typeresult != null)
                         {
@@ -786,7 +795,7 @@ namespace JWTAuthCoreAPIRestful.Repository
                                       join sub in listSubject on mark.SubjectId equals sub.Id
                                       join ttype in listTestType on mark.TestTypeId equals ttype.Id
                                       join stud in listStud on mark.StudentId equals stud.Id
-                                      where sub.SubjectName == subname.SubjectName && ttype.TestTypeName == aType
+                                      where sub.SubjectName == subname.SubjectName && ttype.Id == Convert.ToInt32(aType)
                                       select new Marks5Percent1DTO
                                       {
                                           SubjectName = sub.SubjectName,
@@ -899,13 +908,12 @@ namespace JWTAuthCoreAPIRestful.Repository
                         }
                         lstUnit2.Add(obj);
                     }
-
+                    
                     var mergeResult = (from U1 in lstUnit1
                                        join U2 in lstUnit2 on U1.RollNo equals U2.RollNo
                                        select new Marks5PercentFinalDTO
                                        {
-                                           DivisionName = divname.DivisionName,
-                                           SubjectName = U1.SubjectName,
+                                           sheetsNames = "",
                                            RollNo = U1.RollNo,
                                            Name = U1.Name,
                                            Unit1 = U1.Unit1,
@@ -924,11 +932,35 @@ namespace JWTAuthCoreAPIRestful.Repository
                                            HW = 5,
                                            TOTAL_ROUND_OFF = Math.Round((((U1.Best * 5) / 25) + ((U2.Best1 * 5) / 25) + 5 + 5), 0)
                                        }).ToList();
-
+                    
                     objMarks.Add(mergeResult);
 
                 }
             }
+            var mergeResult1 = new Marks5PercentFinalDTO
+            {
+                sheetsNames = sb.ToString(),
+                RollNo = 0,
+                Name = "",
+                Unit1 = 0,
+                Unit2 = 0,
+                Unit3 = 0,
+                Unit4 = 0,
+                Best = 0,
+                Unit5 = 0,
+                Unit6 = 0,
+                Unit7 = 0,
+                Unit8 = 0,
+                Best1 = 0,
+                Forst_UNIT_5_Percent = 0,
+                Second_UNIT_5_Percent = 0,
+                CW = 0,
+                HW = 0,
+                TOTAL_ROUND_OFF = 0
+            };
+            List<Marks5PercentFinalDTO> objF = new List<Marks5PercentFinalDTO>();
+            objF.Add(mergeResult1);
+            objMarks.Add(objF);
             return objMarks;
         }
     }
