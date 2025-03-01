@@ -54,6 +54,7 @@
     public class Marks5PercentFinalDTO
     {
         public string sheetsNames { get; set; }
+        public string typeNames { get; set; }
         public int RollNo { get; set; }
         public string Name { get; set; }
         public decimal Unit1 { get; set; }
@@ -66,10 +67,12 @@
         public decimal Unit7 { get; set; }
         public decimal Unit8 { get; set; }
         public decimal Best1 { get; set; }
-        public decimal Forst_UNIT_5_Percent { get; set; }
-        public decimal Second_UNIT_5_Percent { get; set; }
+        public decimal First_UNIT_5Percent { get; set; }
+        public decimal Second_UNIT_5Percent { get; set; }
         public decimal CW { get; set; }
         public decimal HW { get; set; }
+
+        public decimal Total { get; set; }
         public decimal TOTAL_ROUND_OFF { get; set; }
 
     }

@@ -3,6 +3,7 @@ using DocumentFormat.OpenXml.Wordprocessing;
 using JWTAuthCoreAPIRestful.Data;
 using JWTAuthCoreAPIRestful.Interface;
 using JWTAuthCoreAPIRestful.Models.StudentResultModel;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Data;
@@ -697,6 +698,9 @@ namespace JWTAuthCoreAPIRestful.Repository
             string[] aTypeGroupA = strGroupA.Split(",");
             string[] aTypeGroupB= strGroupB.Split(",");
             StringBuilder sb = new StringBuilder();
+            StringBuilder sbTestA = new StringBuilder();
+            StringBuilder sbTestB = new StringBuilder();
+            StringBuilder sbDivName = new StringBuilder();
 
             var standardresult = listStandard.Where(x => x.Id == standardId).FirstOrDefault();
             var divlistresult = (from m in listMark
@@ -715,17 +719,34 @@ namespace JWTAuthCoreAPIRestful.Repository
                                      Id = s.Id,
                                      SubjectName = s.SubjectName
                                  }).DistinctBy(y => y.Id).ToList();
-
-            foreach(var divname in divlistresult)
+            foreach (string aType in aTypeGroupA)
             {
-                //int cnt = 0;
+                var typeresult = (from p in listTestType
+                                  where p.Id == Convert.ToInt32(aType)
+                                  select p).FirstOrDefault();
+                if (typeresult != null)
+                {
+                    sbTestA.Append(typeresult.TestTypeName + "_");
+                }
+            }
+            foreach (string aType in aTypeGroupB)
+            {
+                var typeresult = (from p in listTestType
+                                  where p.Id == Convert.ToInt32(aType)
+                                  select p).FirstOrDefault();
+                if (typeresult != null)
+                {
+                    sbTestB.Append(typeresult.TestTypeName + "_");
+                }
+            }
+
+            foreach (var divname in divlistresult)
+            {
+                sbDivName.Append(divname.DivisionName + "-");
                 foreach (var subname in sublistresult)
                 {
-                   // if(cnt == 0)
-                    //{
-                        sb = sb.Append(standardresult.StandardName + "-" + divname.DivisionName + "-" + subname.SubjectName + "~");
-                      //  cnt = 1;
-                    //}
+                    
+                    sb = sb.Append(standardresult.StandardName + "-" + divname.DivisionName + "-" + subname.SubjectName + "~");
                     
                     List<TestType> listTestTypeA = new List<TestType>();
                     List<TestType> listTestTypeB = new List<TestType>();
@@ -744,6 +765,7 @@ namespace JWTAuthCoreAPIRestful.Repository
                                       join ttype in listTestType on mark.TestTypeId equals ttype.Id
                                       join stud in listStud on mark.StudentId equals stud.Id
                                       where sub.SubjectName == subname.SubjectName && ttype.Id == Convert.ToInt32(aType)
+                                      && mark.DivisionId == divname.Id
                                       select new Marks5Percent1DTO
                                       {
                                           SubjectName = sub.SubjectName,
@@ -796,6 +818,7 @@ namespace JWTAuthCoreAPIRestful.Repository
                                       join ttype in listTestType on mark.TestTypeId equals ttype.Id
                                       join stud in listStud on mark.StudentId equals stud.Id
                                       where sub.SubjectName == subname.SubjectName && ttype.Id == Convert.ToInt32(aType)
+                                      && mark.DivisionId == divname.Id
                                       select new Marks5Percent1DTO
                                       {
                                           SubjectName = sub.SubjectName,
@@ -914,6 +937,7 @@ namespace JWTAuthCoreAPIRestful.Repository
                                        select new Marks5PercentFinalDTO
                                        {
                                            sheetsNames = "",
+                                           typeNames = "",
                                            RollNo = U1.RollNo,
                                            Name = U1.Name,
                                            Unit1 = U1.Unit1,
@@ -926,10 +950,11 @@ namespace JWTAuthCoreAPIRestful.Repository
                                            Unit7 = U2.Unit7,
                                            Unit8 = U2.Unit8,
                                            Best1 = U2.Best1,
-                                           Forst_UNIT_5_Percent = ((U1.Best * 5) / 25),
-                                           Second_UNIT_5_Percent = ((U2.Best1 * 5) / 25),
+                                           First_UNIT_5Percent = ((U1.Best * 5) / 25),
+                                           Second_UNIT_5Percent = ((U2.Best1 * 5) / 25),
                                            CW = 5,
                                            HW = 5,
+                                           Total = ((U1.Best * 5) / 25) + ((U2.Best1 * 5) / 25) + 5 + 5,
                                            TOTAL_ROUND_OFF = Math.Round((((U1.Best * 5) / 25) + ((U2.Best1 * 5) / 25) + 5 + 5), 0)
                                        }).ToList();
                     
@@ -937,9 +962,14 @@ namespace JWTAuthCoreAPIRestful.Repository
 
                 }
             }
+            sbTestA = sbTestA.Remove(sbTestA.Length - 1, 1);
+            sbTestB = sbTestB.Remove(sbTestB.Length - 1, 1);
+            sb = sb.Remove(sb.Length - 1, 1);
+            sbDivName = sbDivName.Remove(sbDivName.Length - 1, 1);
             var mergeResult1 = new Marks5PercentFinalDTO
             {
                 sheetsNames = sb.ToString(),
+                typeNames = sbTestA.ToString() + "~" + sbTestB.ToString() + "~" + standardresult.StandardName + "-" + sbDivName.ToString(),
                 RollNo = 0,
                 Name = "",
                 Unit1 = 0,
@@ -952,8 +982,8 @@ namespace JWTAuthCoreAPIRestful.Repository
                 Unit7 = 0,
                 Unit8 = 0,
                 Best1 = 0,
-                Forst_UNIT_5_Percent = 0,
-                Second_UNIT_5_Percent = 0,
+                First_UNIT_5Percent = 0,
+                Second_UNIT_5Percent = 0,
                 CW = 0,
                 HW = 0,
                 TOTAL_ROUND_OFF = 0
