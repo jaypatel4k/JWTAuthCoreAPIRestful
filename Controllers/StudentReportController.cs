@@ -1,15 +1,8 @@
 ﻿using ClosedXML.Excel;
-using DocumentFormat.OpenXml.Spreadsheet;
 using JWTAuthCoreAPIRestful.Interface;
 using JWTAuthCoreAPIRestful.Models.StudentResultModel;
-using JWTAuthCoreAPIRestful.Repository;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.DotNet.Scaffolding.Shared.CodeModifier.CodeChange;
-using Microsoft.EntityFrameworkCore;
 using System.Data;
-using System.IO;
 using System.Text;
 
 namespace JWTAuthCoreAPIRestful.Controllers
@@ -520,6 +513,15 @@ namespace JWTAuthCoreAPIRestful.Controllers
                 return Ok("{\"success\": \"Division already exist.\"}");
             }
         }
+
+        [HttpGet]
+        [Route("Get5PercentMarkTotal")]
+        public async Task<ActionResult<IEnumerable<IEnumerable<Marks5Percent1DTO>>>> Get5PercentMarkTotal(string strGroupA, string strGroupB, int standardId)
+        {
+            var data = await _studentReportRepository.GetSubjectWise_5Percent_Marks_total(strGroupA, strGroupB, standardId);
+            return Ok(data);
+        }
+
 
 
 

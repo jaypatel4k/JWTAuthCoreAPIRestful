@@ -1,13 +1,12 @@
-﻿using DocumentFormat.OpenXml.Drawing.Charts;
-using DocumentFormat.OpenXml.InkML;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
 using DocumentFormat.OpenXml.Wordprocessing;
 using JWTAuthCoreAPIRestful.Data;
 using JWTAuthCoreAPIRestful.Interface;
 using JWTAuthCoreAPIRestful.Models.StudentResultModel;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Concurrent;
+using System;
+using System.Data;
+using System.Linq;
 
 namespace JWTAuthCoreAPIRestful.Repository
 {
@@ -684,5 +683,253 @@ namespace JWTAuthCoreAPIRestful.Repository
             return fresult;
         }
 
+        public async Task<IEnumerable<IEnumerable<Marks5PercentFinalDTO>>> GetSubjectWise_5Percent_Marks_total(string strGroupA, string strGroupB, int standardId)
+        {
+            List<Student> listStud = await _dbcontext.Student.ToListAsync();
+            List<StudentMark> listMark = await _dbcontext.StudentMark.ToListAsync();
+            List<Subject> listSubject = await _dbcontext.Subject.ToListAsync();
+            List<TestType> listTestType = await _dbcontext.TestType.ToListAsync();
+            List<Division> listDivision = await _dbcontext.Division.ToListAsync();
+            
+            List<List<Marks5PercentFinalDTO>> objMarks = new List<List<Marks5PercentFinalDTO>>();
+            string[] aTypeGroupA = strGroupA.Split(",");
+            string[] aTypeGroupB= strGroupB.Split(",");
+
+
+
+            var divlistresult = (from m in listMark
+                                 join d in listDivision on m.DivisionId equals d.Id
+                                 where m.StandardId == standardId
+                                 select new Division
+                                 {
+                                     Id = d.Id,
+                                     DivisionName = d.DivisionName
+                                 }).DistinctBy(y=>y.Id).ToList();
+            var sublistresult = (from m in listMark
+                                 join s in listSubject on m.SubjectId equals s.Id
+                                 where m.StandardId == standardId
+                                 select new Subject
+                                 {
+                                     Id = s.Id,
+                                     SubjectName = s.SubjectName
+                                 }).DistinctBy(y => y.Id).ToList();
+
+            foreach(var divname in divlistresult)
+            {
+                foreach (var subname in sublistresult)
+                {
+                    List<TestType> listTestTypeA = new List<TestType>();
+                    List<TestType> listTestTypeB = new List<TestType>();
+                    List<Marks5Percent1DTO> obj5DTO = new List<Marks5Percent1DTO>();
+                    foreach (string aType in aTypeGroupA)
+                    {
+                        var typeresult = (from p in listTestType
+                                          where p.TestTypeName == aType
+                                          select p).FirstOrDefault();
+                        if (typeresult != null)
+                        {
+                            listTestTypeA.Add(typeresult);
+                        }
+                        var result = (from mark in listMark
+                                      join sub in listSubject on mark.SubjectId equals sub.Id
+                                      join ttype in listTestType on mark.TestTypeId equals ttype.Id
+                                      join stud in listStud on mark.StudentId equals stud.Id
+                                      where sub.SubjectName == subname.SubjectName && ttype.TestTypeName == aType
+                                      select new Marks5Percent1DTO
+                                      {
+                                          SubjectName = sub.SubjectName,
+                                          RollNo = stud.RollNo,
+                                          Name = stud.Name,
+                                          TestTypeName = ttype.TestTypeName,
+                                          Marks = mark.Marks
+                                      }).ToList();
+                        obj5DTO.AddRange(result);
+                    }
+
+                    DataTable pivot = new DataTable();
+                    pivot.Columns.Add("SubjectName", typeof(string));
+                    pivot.Columns.Add("RollNo", typeof(int));
+                    pivot.Columns.Add("Name", typeof(string));
+                    foreach (TestType testtype in listTestTypeA)
+                    {
+                        pivot.Columns.Add(testtype.TestTypeName, typeof(int));
+                    }
+                    pivot.Columns.Add("Best", typeof(int));
+
+                    var groups = obj5DTO.GroupBy(x => new { subjectname = x.SubjectName, rollno = x.RollNo, name = x.Name }).ToList();
+
+                    foreach (var group in groups)
+                    {
+                        DataRow newRow = pivot.Rows.Add();
+                        newRow["SubjectName"] = group.Key.subjectname;
+                        newRow["RollNo"] = group.Key.rollno;
+                        newRow["Name"] = group.Key.name;
+
+                        foreach (var row in group)
+                        {
+                            newRow[row.TestTypeName] = row.Marks;
+                        }
+                        newRow["Best"] = group.Max(x => x.Marks);
+                    }
+                    //
+                    obj5DTO = new List<Marks5Percent1DTO>();
+                    foreach (string aType in aTypeGroupB)
+                    {
+                        var typeresult = (from p in listTestType
+                                          where p.TestTypeName == aType
+                                          select p).FirstOrDefault();
+                        if (typeresult != null)
+                        {
+                            listTestTypeB.Add(typeresult);
+                        }
+                        var result = (from mark in listMark
+                                      join sub in listSubject on mark.SubjectId equals sub.Id
+                                      join ttype in listTestType on mark.TestTypeId equals ttype.Id
+                                      join stud in listStud on mark.StudentId equals stud.Id
+                                      where sub.SubjectName == subname.SubjectName && ttype.TestTypeName == aType
+                                      select new Marks5Percent1DTO
+                                      {
+                                          SubjectName = sub.SubjectName,
+                                          RollNo = stud.RollNo,
+                                          Name = stud.Name,
+                                          TestTypeName = ttype.TestTypeName,
+                                          Marks = mark.Marks
+                                      }).ToList();
+                        obj5DTO.AddRange(result);
+                    }
+
+                    DataTable pivot1 = new DataTable();
+                    pivot1.Columns.Add("SubjectName", typeof(string));
+                    pivot1.Columns.Add("RollNo", typeof(int));
+                    pivot1.Columns.Add("Name", typeof(string));
+                    foreach (TestType testtype in listTestTypeB)
+                    {
+                        pivot1.Columns.Add(testtype.TestTypeName, typeof(int));
+                    }
+                    pivot1.Columns.Add("Best1", typeof(int));
+
+                    var groups1 = obj5DTO.GroupBy(x => new { subjectname = x.SubjectName, rollno = x.RollNo, name = x.Name }).ToList();
+
+                    foreach (var group in groups1)
+                    {
+                        DataRow newRow = pivot1.Rows.Add();
+                        newRow["SubjectName"] = group.Key.subjectname;
+                        newRow["RollNo"] = group.Key.rollno;
+                        newRow["Name"] = group.Key.name;
+
+                        foreach (var row in group)
+                        {
+                            newRow[row.TestTypeName] = row.Marks;
+                        }
+                        newRow["Best1"] = group.Max(x => x.Marks);
+                    }
+                    List<Marks5Test1DTO> lstUnit1 = new List<Marks5Test1DTO>();
+                    foreach (DataRow row in pivot.Rows)
+                    {
+                        Marks5Test1DTO obj = new Marks5Test1DTO();
+                        foreach (DataColumn col in pivot.Columns)
+                        {
+
+                            //string? stra = row[col];
+                            if (col.ColumnName == "SubjectName")
+                                obj.SubjectName = Convert.ToString(row[col]);
+                            if (col.ColumnName == "RollNo")
+                                obj.RollNo = Convert.ToInt32(row[col]);
+                            if (col.ColumnName == "Name")
+                                obj.Name = Convert.ToString(row[col]);
+                            if (col.ColumnName.ToLower().IndexOf("unit") > 0 && col.Ordinal == 3)
+                            {
+                                obj.Unit1 = row[col] == DBNull.Value ? 0 : Convert.ToDecimal(row[col]);
+                            }
+                            if (col.ColumnName.ToLower().IndexOf("unit") > 0 && col.Ordinal == 4)
+                            {
+                                obj.Unit2 = row[col] == DBNull.Value ? 0 : Convert.ToDecimal(row[col]);
+                            }
+                            if (col.ColumnName.ToLower().IndexOf("unit") > 0 && col.Ordinal == 5)
+                            {
+                                obj.Unit3 = row[col] == DBNull.Value ? 0 : Convert.ToDecimal(row[col]);
+                            }
+                            if (col.ColumnName.ToLower().IndexOf("unit") > 0 && col.Ordinal == 6)
+                            {
+                                obj.Unit4 = row[col] == DBNull.Value ? 0 : Convert.ToDecimal(row[col]);
+                            }
+                            if (col.ColumnName == "Best")
+                            {
+                                obj.Best = row[col] == DBNull.Value ? 0 : Convert.ToDecimal(row[col]);
+                            }
+
+                        }
+                        lstUnit1.Add(obj);
+                    }
+                    List<Marks5Test2DTO> lstUnit2 = new List<Marks5Test2DTO>();
+                    foreach (DataRow row in pivot1.Rows)
+                    {
+                        Marks5Test2DTO obj = new Marks5Test2DTO();
+                        foreach (DataColumn col in pivot1.Columns)
+                        {
+                            //string? stra = row[col];
+
+                            if (col.ColumnName == "SubjectName")
+                                obj.SubjectName = Convert.ToString(row[col]);
+                            if (col.ColumnName == "RollNo")
+                                obj.RollNo = Convert.ToInt32(row[col]);
+                            if (col.ColumnName == "Name")
+                                obj.Name = Convert.ToString(row[col]);
+                            if (col.ColumnName.ToLower().IndexOf("unit") > 0 && col.Ordinal == 3)
+                            {
+                                obj.Unit5 = row[col] == DBNull.Value ? 0 : Convert.ToDecimal(row[col]);
+                            }
+                            if (col.ColumnName.ToLower().IndexOf("unit") > 0 && col.Ordinal == 4)
+                            {
+                                obj.Unit6 = row[col] == DBNull.Value ? 0 : Convert.ToDecimal(row[col]);
+                            }
+                            if (col.ColumnName.ToLower().IndexOf("unit") > 0 && col.Ordinal == 5)
+                            {
+                                obj.Unit7 = row[col] == DBNull.Value ? 0 : Convert.ToDecimal(row[col]);
+                            }
+                            if (col.ColumnName.ToLower().IndexOf("unit") > 0 && col.Ordinal == 6)
+                            {
+                                obj.Unit8 = row[col] == DBNull.Value ? 0 : Convert.ToDecimal(row[col]);
+                            }
+                            if (col.ColumnName == "Best1")
+                            {
+                                obj.Best1 = row[col] == DBNull.Value ? 0 : Convert.ToDecimal(row[col]);
+                            }
+
+                        }
+                        lstUnit2.Add(obj);
+                    }
+
+                    var mergeResult = (from U1 in lstUnit1
+                                       join U2 in lstUnit2 on U1.RollNo equals U2.RollNo
+                                       select new Marks5PercentFinalDTO
+                                       {
+                                           DivisionName = divname.DivisionName,
+                                           SubjectName = U1.SubjectName,
+                                           RollNo = U1.RollNo,
+                                           Name = U1.Name,
+                                           Unit1 = U1.Unit1,
+                                           Unit2 = U1.Unit2,
+                                           Unit3 = U1.Unit3,
+                                           Unit4 = U1.Unit4,
+                                           Best = U1.Best,
+                                           Unit5 = U2.Unit5,
+                                           Unit6 = U2.Unit6,
+                                           Unit7 = U2.Unit7,
+                                           Unit8 = U2.Unit8,
+                                           Best1 = U2.Best1,
+                                           Forst_UNIT_5_Percent = ((U1.Best * 5) / 25),
+                                           Second_UNIT_5_Percent = ((U2.Best1 * 5) / 25),
+                                           CW = 5,
+                                           HW = 5,
+                                           TOTAL_ROUND_OFF = Math.Round((((U1.Best * 5) / 25) + ((U2.Best1 * 5) / 25) + 5 + 5), 0)
+                                       }).ToList();
+
+                    objMarks.Add(mergeResult);
+
+                }
+            }
+            return objMarks;
+        }
     }
 }
