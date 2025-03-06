@@ -92,7 +92,9 @@ namespace JWTAuthCoreAPIRestful.Interface
 
         Task<IEnumerable<TopRankInAllDivisionBySubjectNoRank>> GetHighestInAllSubjectInAllDivision(int testTypeId, int monthId, int yearId, int standardId, int streamId);
 
-        Task<IEnumerable<IEnumerable<Marks5PercentFinalDTO>>> GetSubjectWise_5Percent_Marks_total(string strGroupA, string strGroupB, int standardId);
+        //Task<IEnumerable<IEnumerable<Marks5PercentFinalDTO>>> Get5Percent_Marks_total(string strGroupA, string strGroupB, int standardId);
+        Task<object[]> Get5Percent_Marks_total(string strGroupA, string strGroupB, int standardId);
+        Task<object[]> GetSubjectWise_5Percent_Marks_total(string strGroupA, string strGroupB, int standardId);
 
     }
 }

@@ -1,10 +1,12 @@
-﻿using DocumentFormat.OpenXml.Spreadsheet;
+﻿using DocumentFormat.OpenXml.Office2016.Presentation.Command;
+using DocumentFormat.OpenXml.Spreadsheet;
 using DocumentFormat.OpenXml.Wordprocessing;
 using JWTAuthCoreAPIRestful.Data;
 using JWTAuthCoreAPIRestful.Interface;
 using JWTAuthCoreAPIRestful.Models.StudentResultModel;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
+using NuGet.Protocol;
 using System;
 using System.Data;
 using System.Linq;
@@ -685,22 +687,58 @@ namespace JWTAuthCoreAPIRestful.Repository
             return fresult;
         }
 
-        public async Task<IEnumerable<IEnumerable<Marks5PercentFinalDTO>>> GetSubjectWise_5Percent_Marks_total(string strGroupA, string strGroupB, int standardId)
+        public async Task<object[]> GetSubjectWise_5Percent_Marks_total(string strGroupA, string strGroupB, int standardId)
         {
+            var object1 = new object();
+            var aObject = new object[2];
+            
+            
+            var objMarks = await Get5Percent_Marks_total(strGroupA,strGroupB,standardId);
+            aObject[0] = objMarks;
+
+            List<Division> divList = new List<Division>();
+            Division divObj = new Division();
+            divObj.Id = 1;
+            divObj.DivisionName = "A";
+            divObj = new Division();
+            divObj.Id = 1;
+            divObj.DivisionName = "A";
+            divList.Add(divObj);
+            divObj = new Division();
+            divObj.Id = 1;
+            divObj.DivisionName = "A";
+            divList.Add(divObj);
+
+            //aObject[1] = divList;
+
+
+            return aObject;
+        }
+        // public async Task<IEnumerable<IEnumerable<Marks5PercentFinalDTO>>> Get5Percent_Marks_total(string strGroupA, string strGroupB, int standardId)
+        public async Task<object[]> Get5Percent_Marks_total(string strGroupA, string strGroupB, int standardId)
+        {
+            var aObject = new object[2];
             List<Student> listStud = await _dbcontext.Student.ToListAsync();
             List<StudentMark> listMark = await _dbcontext.StudentMark.ToListAsync();
             List<Subject> listSubject = await _dbcontext.Subject.ToListAsync();
             List<TestType> listTestType = await _dbcontext.TestType.ToListAsync();
             List<Division> listDivision = await _dbcontext.Division.ToListAsync();
             List<Standard> listStandard = await _dbcontext.Standard.ToListAsync();
+            List<decimal> marks = new List<decimal>();
+            Dictionary<string, List<decimal>> subjectMarkDictionary = new Dictionary<string, List<decimal>>();
+            Dictionary<string, Dictionary<string, List<decimal>>> subjectMarkDictionaryForDIV = new Dictionary<string, Dictionary<string, List<decimal>>>();
+            Dictionary<string, List<Marks5Percent>> studnameDict = new Dictionary<string, List<Marks5Percent>>();
 
             List<List<Marks5PercentFinalDTO>> objMarks = new List<List<Marks5PercentFinalDTO>>();
+            List<Marks5Percent> studnameList = new List<Marks5Percent>();
             string[] aTypeGroupA = strGroupA.Split(",");
             string[] aTypeGroupB= strGroupB.Split(",");
             StringBuilder sb = new StringBuilder();
+            StringBuilder sbSubject = new StringBuilder();
             StringBuilder sbTestA = new StringBuilder();
             StringBuilder sbTestB = new StringBuilder();
             StringBuilder sbDivName = new StringBuilder();
+            
 
             var standardresult = listStandard.Where(x => x.Id == standardId).FirstOrDefault();
             var divlistresult = (from m in listMark
@@ -719,20 +757,24 @@ namespace JWTAuthCoreAPIRestful.Repository
                                      Id = s.Id,
                                      SubjectName = s.SubjectName
                                  }).DistinctBy(y => y.Id).ToList();
-            foreach (string aType in aTypeGroupA)
+
+
+            //foreach (string aType in aTypeGroupA)
+            for(int cntA=0;cntA< aTypeGroupA.Length;cntA++)
             {
                 var typeresult = (from p in listTestType
-                                  where p.Id == Convert.ToInt32(aType)
+                                  where p.Id == Convert.ToInt32(aTypeGroupA[cntA])
                                   select p).FirstOrDefault();
                 if (typeresult != null)
                 {
                     sbTestA.Append(typeresult.TestTypeName + "_");
                 }
             }
-            foreach (string aType in aTypeGroupB)
+            //foreach (string aType in aTypeGroupB)
+            for (int cntB = 0; cntB < aTypeGroupB.Length; cntB++)
             {
                 var typeresult = (from p in listTestType
-                                  where p.Id == Convert.ToInt32(aType)
+                                  where p.Id == Convert.ToInt32(aTypeGroupB[cntB])
                                   select p).FirstOrDefault();
                 if (typeresult != null)
                 {
@@ -743,6 +785,7 @@ namespace JWTAuthCoreAPIRestful.Repository
             foreach (var divname in divlistresult)
             {
                 sbDivName.Append(divname.DivisionName + "-");
+                subjectMarkDictionary = new Dictionary<string, List<decimal>>();
                 foreach (var subname in sublistresult)
                 {
                     
@@ -751,10 +794,11 @@ namespace JWTAuthCoreAPIRestful.Repository
                     List<TestType> listTestTypeA = new List<TestType>();
                     List<TestType> listTestTypeB = new List<TestType>();
                     List<Marks5Percent1DTO> obj5DTO = new List<Marks5Percent1DTO>();
-                    foreach (string aType in aTypeGroupA)
+                    //foreach (var aType in aTypeGroupA)
+                    for (int cntA = 0; cntA < aTypeGroupA.Length; cntA++)
                     {
                         var typeresult = (from p in listTestType
-                                          where p.Id == Convert.ToInt32(aType)
+                                          where p.Id == Convert.ToInt32(aTypeGroupA[cntA])
                                           select p).FirstOrDefault();
                         if (typeresult != null)
                         {
@@ -764,7 +808,7 @@ namespace JWTAuthCoreAPIRestful.Repository
                                       join sub in listSubject on mark.SubjectId equals sub.Id
                                       join ttype in listTestType on mark.TestTypeId equals ttype.Id
                                       join stud in listStud on mark.StudentId equals stud.Id
-                                      where sub.SubjectName == subname.SubjectName && ttype.Id == Convert.ToInt32(aType)
+                                      where sub.SubjectName == subname.SubjectName && ttype.Id == Convert.ToInt32(aTypeGroupA[cntA])
                                       && mark.DivisionId == divname.Id
                                       select new Marks5Percent1DTO
                                       {
@@ -804,10 +848,11 @@ namespace JWTAuthCoreAPIRestful.Repository
                     }
                     //
                     obj5DTO = new List<Marks5Percent1DTO>();
-                    foreach (string aType in aTypeGroupB)
+                    //foreach (string aType in aTypeGroupB)
+                    for (int cntB = 0; cntB < aTypeGroupB.Length; cntB++)
                     {
                         var typeresult = (from p in listTestType
-                                          where p.Id == Convert.ToInt32(aType)
+                                          where p.Id == Convert.ToInt32(aTypeGroupB[cntB])
                                           select p).FirstOrDefault();
                         if (typeresult != null)
                         {
@@ -817,7 +862,7 @@ namespace JWTAuthCoreAPIRestful.Repository
                                       join sub in listSubject on mark.SubjectId equals sub.Id
                                       join ttype in listTestType on mark.TestTypeId equals ttype.Id
                                       join stud in listStud on mark.StudentId equals stud.Id
-                                      where sub.SubjectName == subname.SubjectName && ttype.Id == Convert.ToInt32(aType)
+                                      where sub.SubjectName == subname.SubjectName && ttype.Id == Convert.ToInt32(aTypeGroupB[cntB])
                                       && mark.DivisionId == divname.Id
                                       select new Marks5Percent1DTO
                                       {
@@ -957,11 +1002,22 @@ namespace JWTAuthCoreAPIRestful.Repository
                                            Total = ((U1.Best * 5) / 25) + ((U2.Best1 * 5) / 25) + 5 + 5,
                                            TOTAL_ROUND_OFF = Math.Round((((U1.Best * 5) / 25) + ((U2.Best1 * 5) / 25) + 5 + 5), 0)
                                        }).ToList();
-                    
-                    objMarks.Add(mergeResult);
 
-                }
-            }
+                    objMarks.Add(mergeResult);
+                    studnameList = (from m in mergeResult
+                             select new Marks5Percent
+                             {
+                                 RollNo = m.RollNo,
+                                 Name = m.Name
+                             }).ToList();
+
+                    marks = new List<decimal>(); 
+                    marks = CreateFinalMarkListForDivision(mergeResult);
+                    subjectMarkDictionary.Add(subname.SubjectName, marks);
+                } //End of Subject For loop
+                subjectMarkDictionaryForDIV.Add(divname.DivisionName, subjectMarkDictionary);
+                studnameDict.Add(divname.DivisionName, studnameList);
+            }//End of Division for Loop
             sbTestA = sbTestA.Remove(sbTestA.Length - 1, 1);
             sbTestB = sbTestB.Remove(sbTestB.Length - 1, 1);
             sb = sb.Remove(sb.Length - 1, 1);
@@ -991,7 +1047,169 @@ namespace JWTAuthCoreAPIRestful.Repository
             List<Marks5PercentFinalDTO> objF = new List<Marks5PercentFinalDTO>();
             objF.Add(mergeResult1);
             objMarks.Add(objF);
-            return objMarks;
+            aObject[0] = objMarks;
+            
+            var aObj = CreateFinalMarkList(subjectMarkDictionaryForDIV,studnameDict, standardresult, divlistresult);
+            aObject[1] = aObj;
+            return aObject;
         }
+
+        private List<decimal> CreateFinalMarkListForDivision(List<Marks5PercentFinalDTO> mergeResult)
+        {
+
+            List<decimal> marks = new List<decimal>();
+            foreach(var mark in mergeResult)
+            {
+                marks.Add(mark.TOTAL_ROUND_OFF);
+            }
+            return marks;
+        }
+        private Object[] CreateFinalMarkList(Dictionary<string, Dictionary<string, List<decimal>>> markdict, Dictionary<string, List<Marks5Percent>> studnameDict,
+                                                Standard stand,List<Division> lstDiv)
+        {
+             int divCnt = markdict.Count+2;
+            int subCnt = 0;
+            var aObject = new object[divCnt];
+            var strTest = "";
+            int studMarkCount = 0;
+                int cntDiv = 0;
+            List<string> subjectKeys = new List<string>();
+            List<string> divKeys = new List<string>();
+            FinalMarks10Subject obj = new FinalMarks10Subject();
+            List<FinalMarks10Subject> objList = new List<FinalMarks10Subject>();
+            StringBuilder sb = new StringBuilder();
+            StringBuilder sbfinalSheet = new StringBuilder();
+            foreach(var div in lstDiv)
+            {
+                sbfinalSheet.Append(stand.StandardName.ToUpper() + "-" + div.DivisionName.ToUpper() + "-FINAL-" + "~");
+            }
+            sbfinalSheet = sbfinalSheet.Remove(sbfinalSheet.Length - 1, 1);
+            foreach (var divDict in markdict)
+            {
+                
+                divKeys.Add(divDict.Key);
+                foreach (var subDic in divDict.Value)
+                {
+                    if (subjectKeys.Contains(subDic.Key) == false)
+                    {
+                        subjectKeys.Add(subDic.Key);
+                        sb.Append(subDic.Key + "~");
+                    }
+                }
+            }
+            foreach (var divDict in markdict)
+            {
+                foreach (var subDic in divDict.Value)
+                {
+                    strTest = subDic.Key;
+                    subCnt = divDict.Value.Count;
+                    studMarkCount = subDic.Value.Count;
+                    break;
+                }
+                break;
+            }
+
+            sb = sb.Remove(sb.Length - 1, 1);
+
+            foreach (var divDict in markdict)
+            {
+                objList = new List<FinalMarks10Subject>();
+                var studnameList = studnameDict[divDict.Key];
+                for (int cnt1 = 0; cnt1 < studMarkCount; cnt1++)
+                {
+                    if (subCnt == 6)
+                    {
+                        obj = new FinalMarks10Subject();
+                        obj.RollNo = studnameList[cnt1].RollNo;
+                        obj.Name = studnameList[cnt1].Name;
+                        obj.Subject1 = divDict.Value[subjectKeys[0]][cnt1];
+                        obj.Subject2 = divDict.Value[subjectKeys[1]][cnt1];
+                        obj.Subject3 = divDict.Value[subjectKeys[2]][cnt1];
+                        obj.Subject4 = divDict.Value[subjectKeys[3]][cnt1];
+                        obj.Subject5 = divDict.Value[subjectKeys[4]][cnt1];
+                        obj.Subject6 = divDict.Value[subjectKeys[5]][cnt1];
+                    }
+                    if (subCnt == 7)
+                    {
+                        obj = new FinalMarks10Subject();
+                        obj.RollNo = studnameList[cnt1].RollNo;
+                        obj.Name = studnameList[cnt1].Name;
+                        obj.Subject1 = divDict.Value[subjectKeys[0]][cnt1];
+                        obj.Subject2 = divDict.Value[subjectKeys[1]][cnt1];
+                        obj.Subject3 = divDict.Value[subjectKeys[2]][cnt1];
+                        obj.Subject4 = divDict.Value[subjectKeys[3]][cnt1];
+                        obj.Subject5 = divDict.Value[subjectKeys[4]][cnt1];
+                        obj.Subject6 = divDict.Value[subjectKeys[5]][cnt1];
+                        obj.Subject7 = divDict.Value[subjectKeys[6]][cnt1];
+                    }
+                    if (subCnt == 8)
+                    {
+                        obj = new FinalMarks10Subject();
+                        obj.RollNo = studnameList[cnt1].RollNo;
+                        obj.Name = studnameList[cnt1].Name;
+                        obj.Subject1 = divDict.Value[subjectKeys[0]][cnt1];
+                        obj.Subject2 = divDict.Value[subjectKeys[1]][cnt1];
+                        obj.Subject3 = divDict.Value[subjectKeys[2]][cnt1];
+                        obj.Subject4 = divDict.Value[subjectKeys[3]][cnt1];
+                        obj.Subject5 = divDict.Value[subjectKeys[4]][cnt1];
+                        obj.Subject6 = divDict.Value[subjectKeys[5]][cnt1];
+                        obj.Subject7 = divDict.Value[subjectKeys[6]][cnt1];
+                        obj.Subject8 = divDict.Value[subjectKeys[7]][cnt1];
+                    }
+                    if (subCnt == 9)
+                    {
+                        obj = new FinalMarks10Subject();
+                        obj.RollNo = studnameList[cnt1].RollNo;
+                        obj.Name = studnameList[cnt1].Name;
+                        obj.Subject1 = divDict.Value[subjectKeys[0]][cnt1];
+                        obj.Subject2 = divDict.Value[subjectKeys[1]][cnt1];
+                        obj.Subject3 = divDict.Value[subjectKeys[2]][cnt1];
+                        obj.Subject4 = divDict.Value[subjectKeys[3]][cnt1];
+                        obj.Subject5 = divDict.Value[subjectKeys[4]][cnt1];
+                        obj.Subject6 = divDict.Value[subjectKeys[5]][cnt1];
+                        obj.Subject7 = divDict.Value[subjectKeys[6]][cnt1];
+                        obj.Subject8 = divDict.Value[subjectKeys[7]][cnt1];
+                        obj.Subject9 = divDict.Value[subjectKeys[8]][cnt1];
+                    }
+                    if (subCnt == 10)
+                    {
+                        obj = new FinalMarks10Subject();
+                        obj.RollNo = studnameList[cnt1].RollNo;
+                        obj.Name = studnameList[cnt1].Name;
+                        obj.Subject1 = divDict.Value[subjectKeys[0]][cnt1];
+                        obj.Subject2 = divDict.Value[subjectKeys[1]][cnt1];
+                        obj.Subject3 = divDict.Value[subjectKeys[2]][cnt1];
+                        obj.Subject4 = divDict.Value[subjectKeys[3]][cnt1];
+                        obj.Subject5 = divDict.Value[subjectKeys[4]][cnt1];
+                        obj.Subject6 = divDict.Value[subjectKeys[5]][cnt1];
+                        obj.Subject7 = divDict.Value[subjectKeys[6]][cnt1];
+                        obj.Subject8 = divDict.Value[subjectKeys[7]][cnt1];
+                        obj.Subject9 = divDict.Value[subjectKeys[8]][cnt1];
+                        obj.Subject10 = divDict.Value[subjectKeys[9]][cnt1];
+                    }
+                    objList.Add(obj);
+                }
+                aObject[cntDiv] = objList;
+                
+                if(cntDiv == markdict.Count-1)
+                {
+                    cntDiv++;
+                    subjectDTO sObj = new subjectDTO();
+                    sObj.strAllSubject = sb.ToString();
+                    aObject[cntDiv] = sObj;
+                    cntDiv++;
+                }
+                if (cntDiv == markdict.Count+1)
+                {
+                    SheetnameDTO sheetObj = new SheetnameDTO();
+                    sheetObj.strFinalSheetname = sbfinalSheet.ToString();
+                    aObject[cntDiv] = sheetObj;
+                }
+                cntDiv++;
+
+            }
+            return aObject;
+        }
+
     }
 }

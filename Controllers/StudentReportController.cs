@@ -514,16 +514,21 @@ namespace JWTAuthCoreAPIRestful.Controllers
             }
         }
 
+        //[HttpGet]
+        //[Route("Get5PercentMarkTotal")]
+        //public async Task<ActionResult<IEnumerable<IEnumerable<Marks5Percent1DTO>>>> Get5PercentMarkTotal(string strGroupA, string strGroupB, int standardId)
+        //{
+        //    var data = await _studentReportRepository.GetSubjectWise_5Percent_Marks_total(strGroupA, strGroupB, standardId);
+        //    return Ok(data);
+        //}
+
         [HttpGet]
         [Route("Get5PercentMarkTotal")]
-        public async Task<ActionResult<IEnumerable<IEnumerable<Marks5Percent1DTO>>>> Get5PercentMarkTotal(string strGroupA, string strGroupB, int standardId)
+        public async Task<ActionResult<Object[]>> Get5PercentMarkTotal(string strGroupA, string strGroupB, int standardId)
         {
             var data = await _studentReportRepository.GetSubjectWise_5Percent_Marks_total(strGroupA, strGroupB, standardId);
             return Ok(data);
         }
-
-
-
 
     }
 }
