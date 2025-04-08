@@ -1097,6 +1097,20 @@ namespace JWTAuthCoreAPIRestful.Repository
                     }
                 }
             }
+            //foreach (var divDict in markdict)
+            //{
+            //    foreach (var subDic in divDict.Value)
+            //    {
+            //        strTest = subDic.Key;
+            //        subCnt = divDict.Value.Count;
+            //        studMarkCount = subDic.Value.Count;
+            //        break;
+            //    }
+            //    break;
+            //}
+
+            sb = sb.Remove(sb.Length - 1, 1);
+
             foreach (var divDict in markdict)
             {
                 foreach (var subDic in divDict.Value)
@@ -1106,13 +1120,6 @@ namespace JWTAuthCoreAPIRestful.Repository
                     studMarkCount = subDic.Value.Count;
                     break;
                 }
-                break;
-            }
-
-            sb = sb.Remove(sb.Length - 1, 1);
-
-            foreach (var divDict in markdict)
-            {
                 objList = new List<FinalMarks10Subject>();
                 var studnameList = studnameDict[divDict.Key];
                 for (int cnt1 = 0; cnt1 < studMarkCount; cnt1++)
